@@ -25,22 +25,22 @@
       "valid": true
     },
     "description": {
-      "characters": 3168,
-      "utf8Bytes": 3169,
+      "characters": 3238,
+      "utf8Bytes": 3239,
       "limit": 4000,
       "limitUnit": "characters",
       "valid": true
     },
     "promotionalText": {
-      "characters": 142,
-      "utf8Bytes": 142,
+      "characters": 149,
+      "utf8Bytes": 149,
       "limit": 170,
       "limitUnit": "characters",
       "valid": true
     },
     "reviewNotes": {
-      "characters": 3966,
-      "utf8Bytes": 3967,
+      "characters": 3987,
+      "utf8Bytes": 3988,
       "limit": 4000,
       "limitUnit": "characters",
       "valid": true

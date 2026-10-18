@@ -1,0 +1,16 @@
+TabForge 1.0 (12): improved swipe typing
+
+Optional swipe typing now uses a bundled English dictionary alongside programming words. The decoder accounts for key spacing and reranks similar paths. The reported testing-to-typeof error is fixed in synthetic regression tests.
+
+Swipe remains experimental and off by default. Enable Swipe code words in the keyboard's gear menu. Alternatives are available there after a swipe. Tap typing remains useful for identifiers and words outside the dictionary.
+
+Please try:
+- Swipe testing and everyday English words, then programming terms you use often. Compare the result with your intended word and try an alternative.
+- Swipe the same word twice and use its alternatives each time.
+- Move the cursor, edit the text, rotate the device or change layouts before using an older alternative. It should not change unrelated text.
+- Use phone portrait and compact landscape, iPad and supported Duo layouts.
+- Switch apps or dismiss and reopen the keyboard. Ordinary tap typing and overlapping presses should still work.
+
+All recognition stays on the device. The keyboard does not record gestures, learn from typing or request Full Access. Settings and snippets remain in the keyboard's own container.
+
+Automated checks use synthetic gestures. Real finger accuracy, cold-start latency, memory pressure and individual terminal clients still need device feedback. Report problems with synthetic examples rather than private text.

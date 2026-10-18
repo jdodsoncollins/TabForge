@@ -1,8 +1,10 @@
 # US English listing copy
 
-Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `SECURITY.md`, Apple's product-page documentation and comparable public keyboard listings. The current local revision describes keyboard-only settings and snippets with no Full Access or App Group. The revised description and reviewer notes are saved in the editable App Store Connect draft. Build 11 passed the archive audit and Apple's binary validation. No App Review submission has been made. Private receipts remain in ignored release artifacts.
+Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `SECURITY.md`, Apple's product-page documentation and comparable public keyboard listings. The submitted copy describes build 12: keyboard-only settings and snippets, no Full Access or App Group, and optional experimental swipe using bundled English and programming words. The listing received the requested Humanizer 3.1.0 pass. All 31 screenshot captions and the header were also reviewed; no image copy changes were needed. The updated description and reviewer notes read back exactly. Promotional text, name, subtitle and keywords remain unchanged from the earlier Humanizer pass.
 
-## Proposed presentation
+Build 12’s archive/export and all 19 artifact checks passed, and Apple processing returned VALID. Internal TestFlight access and exact testing notes were verified. It replaced the withdrawn build 11 submission. Version 1.0 (12) and its linked header were submitted on October 18, 2026 and both read back as Waiting for Review. The app remains Free with release after approval configured. Private receipts remain in ignored release artifacts.
+
+## Submitted presentation
 
 - **Name:** TabForge: Code Keyboard
 - **Subtitle:** Programming and terminal keys
@@ -41,14 +43,14 @@ The fifth image adapts to the actual device capture; it is one image per device 
 
 ## Release readiness checks
 
-The [release-readiness review](../readiness.md) distinguishes current build 11 checks from historical build 9/10 evidence. Before a future App Review submission:
+The [release-readiness review](../readiness.md) separates build 12 source and release checks from historical build 11/10/9 evidence. For future App Review submissions:
 
 1. Verify a matching new binary has no Full Access request, App Group entitlement or sharing code, and that keyboard settings/snippet management works in the extension without altering host text during snippet editing.
 2. Verify the companion has no persistent keyboard controls: previews use only memory while the playground draft remains saved independently.
 3. Publish the matching website policy, repository support/privacy documents, and listing/reviewer copy through the authorized release process, then read them back. Changing these local files does not change any remote destination.
 4. Keep App Privacy publication separate from the source privacy manifest. Local-only processing supports the prepared Data Not Collected recommendation; do not claim the questionnaire is published without checking its actual state.
 5. Refresh screenshots whose settings or preview UI changed, and record processing, order, crop safety and source checksums. Earlier complete media receipts describe the older UI.
-6. Preserve the saved price, private review contact, manual-release setting and unsubmitted version. Re-run applicable readiness checks against the new binary; older zero-warning results are historical evidence.
+6. Verify the saved price, private review contact and intended release setting. Re-run applicable readiness checks against the new binary; older zero-warning results are historical evidence.
 7. Expose only accessibility claims whose complete criteria have been verified. Simulator labels and layout checks do not establish physical assistive-technology flows, palm rejection or immunity to extension termination.
 
 ## Sources checked

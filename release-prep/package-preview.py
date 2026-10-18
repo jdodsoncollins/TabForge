@@ -9,7 +9,8 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--artifacts", type=Path, default=Path("artifacts/app-store-release-2026-10-18"))
-parser.add_argument("--build-number", required=True, help="The validated build selected in the draft")
+parser.add_argument("--build-number", required=True, help="The validated build selected for the listing")
+parser.add_argument("--review-state", choices=["draft", "submitted"], default="draft")
 args = parser.parse_args()
 root = args.artifacts.resolve()
 destination = root / "review-package"
@@ -74,7 +75,7 @@ This package contains **{count} listing images** across {len(families)} layout s
 
 Every keyboard and settings panel is a real native capture. Device frames come from Apple's installed Simulator resources or real Device Hub pose captures. Folded geometry is shown through actual Device Hub renders. Some iPhone and iPad captures are reused proportionally at another output size; that does not establish a separate device test. The asset manifest records the source family and final image hashes. The header is brand artwork; its prompt is included separately.
 
-The App Store version is a draft and has not been submitted for review. Build {args.build_number} passed Apple's binary validation and was selected for that draft. Manual release is configured. Pricing is Free, private reviewer contact is saved, and public support email and the updated live privacy policy are in place. The owner-approved Data Not Collected privacy disclosure is published. Account requirements must also be checked before a future submission. Simulator captures do not certify physical touch, speech availability, memory-pressure survival, or every third-party host.
+{f"Version 1.0 ({args.build_number}) and the linked header are Waiting for Review. The owner approved submission after a final Humanizer copy pass. Release after approval is configured." if args.review_state == "submitted" else f"The App Store version is a draft and has not been submitted for review. Build {args.build_number} passed Apple's binary validation and was selected for that draft."} Pricing is Free, private reviewer contact is saved, and public support email and the updated live privacy policy are in place. The owner-approved Data Not Collected privacy disclosure is published. Simulator captures do not certify physical touch, speech availability, memory-pressure survival, or every third-party host.
 
 This preview excludes private account records, private contact details, credentials, signing resources, device inventories, logs, original captures, archives and IPA files. The approved public support email remains in the listing and policy materials.
 """)

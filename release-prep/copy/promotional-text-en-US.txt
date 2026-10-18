@@ -1,1 +1,1 @@
-Write code with brackets, Tab and editing controls close at hand. An open-source keyboard for iPhone and iPad, with themes and local settings.
+A free, open-source keyboard for code and terminal work, with brackets, Tab, snippets and themes. Configure it from the keyboard without Full Access.

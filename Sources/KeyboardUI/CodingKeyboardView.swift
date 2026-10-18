@@ -119,6 +119,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private var navigationButtons: [UIButton] = []
     private var modifierButtons: [(UIButton, KeyboardModifiers)] = []
     private var displayedSuggestions: [String] = []
+    private var displayedSwipeGeneration: UInt64?
     private let statusLabel = UILabel()
     private var layout = KeyboardLayout.compact
     private var tabletopHeight: CGFloat?
@@ -147,6 +148,27 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private var previewLabel: UILabel?
     private var swipeTrace: [SwipePoint] = []
     private var swipePath = UIBezierPath()
+    private var swipeDecoder: SwipeDecoder?
+    @MainActor private struct SwipeAnchor {
+        let identifier: UUID?
+        let before: String?
+        let after: String?
+        init(_ document: any TextDocument) {
+            identifier = document.autocorrectionContextIdentifier
+            before = document.contextBeforeInput(maximumCharacters: 32)
+            after = document.contextAfterInput(maximumCharacters: 32)
+        }
+        func matches(_ document: any TextDocument) -> Bool {
+            identifier == document.autocorrectionContextIdentifier &&
+                before == document.contextBeforeInput(maximumCharacters: 32) &&
+                after == document.contextAfterInput(maximumCharacters: 32) && document.selectedText == nil
+        }
+    }
+    private var swipeAnchor: SwipeAnchor?
+    private var swipeBounds: CGRect?
+    private var swipeCenters: [Character: SwipePoint]?
+    private var swipeGeneration: UInt64 = 0
+    private var swipeReplacementAnchor: SwipeAnchor?
     private var swipeWords: [String] = []
     private var lastSwipeWord: String?
     private let swipeLayer = CAShapeLayer()
@@ -328,6 +350,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // preferences. Avoid touching every control or rescanning suggestions
         // when no preference changed; text/selection events refresh context.
         guard preferences.settings != lastSettings else { return }
+        invalidateSwipeContext()
+        if lastSettings?.language != preferences.settings.language ||
+            !preferences.settings.swipeTyping || !preferences.settings.smartEditingEnabled {
+            swipeDecoder = nil
+        }
         engine.invalidateAutocorrection()
         if !preferences.settings.autocorrectProse {
             proseCorrector = nil; correctionDocument = nil; supplementaryProtectedWords = []
@@ -847,7 +874,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
         if isScrubbing { isScrubbing = false; return }
         statusTask?.cancel(); statusLabel.isHidden = true
-        lastSwipeWord = nil; swipeWords = []
+        invalidateSwipeContext()
         // Changing character pages or Shift must preserve the pending chord.
         if action == .mode || action == .symbols || action == .shift || action == .function {
             switch action {
@@ -917,8 +944,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Suggestions remain available in the shared tools and settings menu,
         // leaving a toolbar slot for the dedicated Escape key.
         let words = swipeWords.isEmpty ? engine.completions : swipeWords
-        guard words != displayedSuggestions else { return }
+        let generation = swipeWords.isEmpty ? nil : swipeGeneration
+        guard words != displayedSuggestions || generation != displayedSwipeGeneration else { return }
         displayedSuggestions = words
+        displayedSwipeGeneration = generation
         updateCombinedMenu()
     }
     /// Use iOS's keyboard lexicon to leave names and text-shortcut inputs alone.
@@ -934,10 +963,21 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         guard !isEditingSnippet else { return }
         engine.invalidateAutocorrection()
         latchedModifiers = []; usedHeldModifiers.formUnion(heldModifiers); updateModifierButtons()
-        if let last = lastSwipeWord, engine.document.before?.hasSuffix(last) == true {
-            for _ in last { engine.document.deleteBackward() }
-            engine.document.insert(word)
+        if let last = lastSwipeWord {
+            // A verified native replacement temporarily selects its source.
+            // Preserve alternatives across those synchronous host callbacks.
+            let alternatives = swipeWords
+            guard swipeReplacementAnchor?.matches(engine.document) == true,
+                  engine.document.replaceTextBeforeCursor(last, with: word) else {
+                invalidateSwipeContext(); refreshContext(); return
+            }
             lastSwipeWord = word
+            swipeWords = alternatives
+            swipeReplacementAnchor = SwipeAnchor(engine.document)
+            swipeGeneration &+= 1
+            // Every retained alternative belongs to the source word and anchor
+            // shown when its menu was built. Refresh them after replacement.
+            updateCombinedMenu()
         } else { engine.complete(word) }
         refreshContext()
     }
@@ -1088,7 +1128,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             UIMenu(title: "Editing preferences", image: UIImage(systemName: "text.cursor"), children: [
                 toggle("Pair brackets & quotes", \.autoPair), toggle("Skip existing closing delimiter", \.skipClosingDelimiter),
                 toggle("Automatic indentation", \.smartIndent), toggle("Code suggestions", \.suggestions), autocorrect,
-                toggle("Swipe code words · beta", \.swipeTyping)
+                toggle("Swipe typing · beta", \.swipeTyping)
             ]),
             UIMenu(title: "Layout & keys", image: UIImage(systemName: "keyboard"), children: [
                 size, toggle("Show number row in full layouts", \.showNumberRow),
@@ -1127,8 +1167,24 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             let terminalOnly = [.pageUp, .pageDown].contains(key)
             return UIAction(title: title, attributes: terminalOnly && settings.compatibility != .terminal ? .disabled : []) { [weak self] _ in self?.perform(.navigation(key)) }
         }
-        let suggestions = UIMenu(title: swipeWords.isEmpty ? "Code suggestions" : "Swipe alternatives", children: displayedSuggestions.map { word in
-            UIAction(title: word) { [weak self] _ in self?.accept(word) }
+        let isSwipeAlternative = !swipeWords.isEmpty
+        let expectedGeneration = swipeGeneration
+        let expectedWord = lastSwipeWord
+        let expectedAnchor = swipeReplacementAnchor
+        let suggestions = UIMenu(title: isSwipeAlternative ? "Swipe alternatives" : "Code suggestions", children: displayedSuggestions.map { word in
+            UIAction(title: word) { [weak self] _ in
+                guard let self else { return }
+                if isSwipeAlternative {
+                    // A menu can outlive a host callback or another gesture.
+                    // Never reinterpret an old swipe alternative as a completion.
+                    guard self.swipeGeneration == expectedGeneration,
+                          let expectedWord, self.lastSwipeWord == expectedWord,
+                          expectedAnchor?.matches(self.engine.document) == true else { return }
+                } else {
+                    guard self.lastSwipeWord == nil else { return }
+                }
+                self.accept(word)
+            }
         })
         let editing = UIMenu(title: "Editing actions", image: UIImage(systemName: "text.cursor"), children: [
             UIAction(title: capsLock ? "Turn Caps Lock off" : "Turn Caps Lock on", image: UIImage(systemName: "capslock")) { [weak self] _ in self?.toggleCapsLock() },
@@ -1240,8 +1296,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         stopDeleting(); hidePreview()
         statusTask?.cancel(); statusTask = nil
         statusLabel.isHidden = true
-        swipeTrace = []; swipePath = UIBezierPath(); swipeLayer.path = nil
-        swipeWords = []; lastSwipeWord = nil
+        invalidateSwipeContext()
+        swipeDecoder = nil
         clearModifiers(); isScrubbing = false
         activeKeyPresses = []; keyPresses = [:]; shiftHeld = false; shiftUsed = false
         if needsKeyRebuild { needsKeyRebuild = false; rebuild() }
@@ -1276,7 +1332,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         guard !isEditingSnippet else { return }
         guard !UIAccessibility.isVoiceOverRunning, !UIAccessibility.isSwitchControlRunning,
             preferences.settings.cursorScrubbing, preferences.settings.compatibility != .terminal, modifiers.isEmpty else { return }
-        if gesture.state == .began { scrubTranslation = 0; isScrubbing = true; hidePreview() }
+        if gesture.state == .began { invalidateSwipeContext(); scrubTranslation = 0; isScrubbing = true; hidePreview() }
         let x = gesture.translation(in: self).x
         let steps = Int((x - scrubTranslation) / 12)
         if steps != 0 {
@@ -1291,19 +1347,45 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if gestureRecognizer.view is KeyButton {
             return preferences.settings.cursorScrubbing && preferences.settings.compatibility != .terminal && modifiers.isEmpty
         }
-        guard preferences.settings.swipeTyping, preferences.settings.smartEditingEnabled, !numbers, modifiers.isEmpty else { return false }
+        guard preferences.settings.swipeTyping, preferences.settings.smartEditingEnabled, !numbers, !functionLayer, modifiers.isEmpty else { return false }
         let point = gestureRecognizer.location(in: self)
         return rows.flatMap { $0 }.contains { key in
             if case .text(let value) = key.action { return value.count == 1 && value.first!.isLetter && key.frame.contains(point) }
             return false
         }
     }
+    /// Host-owned cursor/field changes must not carry a gesture or replacement into another input.
+    func invalidateSwipeContext() {
+        swipeGeneration &+= 1
+        swipeTrace = []; swipePath = UIBezierPath(); swipeLayer.path = nil
+        swipeAnchor = nil; swipeBounds = nil; swipeCenters = nil; swipeReplacementAnchor = nil
+        swipeWords = []; lastSwipeWord = nil
+    }
+
+    private func swipeKeyCenters() -> [Character: SwipePoint] {
+        guard bounds.width > 0 else { return [:] }
+        var centers: [Character: SwipePoint] = [:]
+        for key in rows.flatMap({ $0 }) where !key.isHidden {
+            if case .text(let text) = key.action, text.count == 1,
+               let letter = text.lowercased().first, letter.isLetter {
+                centers[letter] = SwipePoint(x: Double(key.frame.midX / bounds.width), y: Double(key.frame.midY / bounds.width))
+            }
+        }
+        return centers
+    }
+
     @objc private func handleSwipe(_ gesture: UIPanGestureRecognizer) {
-        guard !isEditingSnippet else { swipeLayer.path = nil; swipeTrace = []; swipePath = UIBezierPath(); return }
+        guard !isEditingSnippet, preferences.settings.swipeTyping, preferences.settings.smartEditingEnabled,
+              !numbers, modifiers.isEmpty, !functionLayer, bounds.width > 0, gesture.numberOfTouches <= 1 else { invalidateSwipeContext(); return }
         let point = gesture.location(in: self)
         let normalized = SwipePoint(x: Double(point.x / bounds.width), y: Double(point.y / bounds.width))
         switch gesture.state {
         case .began:
+            invalidateSwipeContext()
+            guard engine.document.selectedText == nil else { return }
+            swipeAnchor = SwipeAnchor(engine.document)
+            swipeBounds = bounds
+            swipeCenters = swipeKeyCenters()
             hidePreview()
             let translation = gesture.translation(in: self)
             swipeTrace = [SwipePoint(x: Double((point.x - translation.x) / bounds.width), y: Double((point.y - translation.y) / bounds.width)), normalized]
@@ -1312,6 +1394,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             swipePath.addLine(to: point)
             swipeLayer.path = swipePath.cgPath
         case .changed:
+            guard swipeBounds == bounds, swipeCenters == swipeKeyCenters(),
+                  swipeAnchor?.matches(engine.document) == true else { invalidateSwipeContext(); return }
             // Long or stalled gestures must not grow an unbounded path/array.
             if swipeTrace.count >= 256 {
                 swipeTrace = stride(from: 0, to: swipeTrace.count, by: 2).map { swipeTrace[$0] }
@@ -1325,24 +1409,27 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             swipePath.addLine(to: point)
             swipeLayer.path = swipePath.cgPath
         case .ended:
+            guard swipeBounds == bounds, let centers = swipeCenters, centers == swipeKeyCenters(),
+                  swipeAnchor?.matches(engine.document) == true else { invalidateSwipeContext(); return }
             engine.invalidateAutocorrection()
             swipeTrace.append(normalized)
-            var centers: [Character: SwipePoint] = [:]
-            for key in rows.flatMap({ $0 }) {
-                if case .text(let text) = key.action, text.count == 1, let letter = text.lowercased().first, letter.isLetter {
-                    centers[letter] = SwipePoint(x: Double(key.frame.midX / bounds.width), y: Double(key.frame.midY / bounds.width))
-                }
+            if swipeDecoder == nil {
+                swipeDecoder = SwipeDecoder(words: SwipeDecoder.vocabulary + preferences.settings.language.keywords)
             }
-            swipeWords = SwipeDecoder.candidates(trace: swipeTrace, centers: centers, words: SwipeDecoder.vocabulary + preferences.settings.language.keywords)
-            if let word = swipeWords.first {
-                let prefix = engine.document.before?.last
+            let candidates = swipeDecoder?.candidates(trace: swipeTrace, centers: centers) ?? []
+            if let word = candidates.first {
+                let prefix = engine.document.contextBeforeInput(maximumCharacters: 1)?.last
                 if prefix?.isLetter == true || prefix?.isNumber == true { engine.document.insert(" ") }
                 let output = uppercase ? word.prefix(1).uppercased() + word.dropFirst() : word
                 engine.document.insert(output); lastSwipeWord = output
+                swipeWords = candidates
+                swipeReplacementAnchor = SwipeAnchor(engine.document)
                 if uppercase && !capsLock { uppercase = false; rebuild() }
-            } else { showStatus("No matching code word") }
-            swipeLayer.path = nil; swipeTrace = []; swipePath = UIBezierPath(); refreshContext()
-        case .cancelled, .failed: swipeLayer.path = nil; swipeTrace = []; swipePath = UIBezierPath()
+            } else { showStatus("No swipe match") }
+            swipeLayer.path = nil; swipeTrace = []; swipePath = UIBezierPath()
+            swipeAnchor = nil; swipeBounds = nil; swipeCenters = nil
+            refreshContext()
+        case .cancelled, .failed: invalidateSwipeContext()
         default: break
         }
     }

@@ -265,11 +265,11 @@ struct SmartInputInfoView: View {
                 Text("The keyboard extension leaves iOS’s system dictation key enabled. If the host doesn’t show it, switch to the Apple keyboard with the globe. Extensions cannot record microphone audio directly.").foregroundStyle(.secondary)
             }
             Section("Swipe typing · beta") {
-                Text("Slide across letter keys to write common programming words. Open the gear menu → Swipe alternatives to choose another match. This local recognizer supports the bundled code vocabulary; it does not use Apple QuickPath or a general language model.")
+                Text("Slide across letter keys to write English words and programming terms. Open the gear menu → Swipe alternatives to choose another match. The dictionary is bundled offline. Recognition remains experimental; names, arbitrary identifiers and other languages may need tap typing.")
             }
             Section("Apple Intelligence") {
                 Text("The playground’s native text editor allows system Writing Tools through the text selection menu on supported devices. Availability depends on your device, language, and Apple Intelligence settings. Review generated changes carefully when working with source code.")
-                Text("Apple doesn’t expose its QuickPath swipe decoder to third-party keyboards. TabForge uses its own small gesture decoder, keeping the extension fast and independent of a model download.").foregroundStyle(.secondary)
+                Text("Apple doesn’t expose its QuickPath swipe decoder to third-party keyboards. TabForge uses its own geometric decoder and an included English dictionary. It does not download a model or learn from your typing.").foregroundStyle(.secondary)
             }
         }.navigationTitle("Smart input").navigationBarTitleDisplayMode(.inline)
     }

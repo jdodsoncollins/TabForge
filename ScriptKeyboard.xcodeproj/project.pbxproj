@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00DFC18CC03B82AFA0EC2D66 /* TextViewDocumentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BE59F0CFF513E22D68EF877 /* TextViewDocumentTests.swift */; };
+		0437F834A5C61E283098068A /* KeyboardSwipeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D833B795652F8F712771EE /* KeyboardSwipeTests.swift */; };
 		09EFB7C48DAF7968B7C7E43B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 799225D2A22D04C2F99A78CB /* Assets.xcassets */; };
 		0AE7979D88D0194CAA693FDA /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5ADA8BC5BE24434DA3E5444 /* PreferencesStore.swift */; };
 		13BA71B7DFEA48D053FEFC8D /* SnippetDraftRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02B95F5D8BABF30C0370BE54 /* SnippetDraftRoutingTests.swift */; };
@@ -111,6 +112,7 @@
 		8802A626DBDFDC8E935824F3 /* PlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaygroundView.swift; sourceTree = "<group>"; };
 		8A62BB79CF4DFD57E897F585 /* KeyboardPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardPerformanceTests.swift; sourceTree = "<group>"; };
 		8B5B99C537338499ED845FED /* Build.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
+		91D833B795652F8F712771EE /* KeyboardSwipeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSwipeTests.swift; sourceTree = "<group>"; };
 		9299DD9DF7AEC3C107815B8F /* CodingKeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingKeyboardView.swift; sourceTree = "<group>"; };
 		94021A99E23E1B0E248E3B57 /* KeyboardThemesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardThemesView.swift; sourceTree = "<group>"; };
 		971E84059728D03F95396F04 /* ProgrammingSymbolsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgrammingSymbolsUITests.swift; sourceTree = "<group>"; };
@@ -255,6 +257,7 @@
 				BAC70EE286538241CD0EC01C /* EditorAccessibilityTests.swift */,
 				EB241984B96A3D22B7DB3FFA /* KeyboardCompactLayoutTests.swift */,
 				8A62BB79CF4DFD57E897F585 /* KeyboardPerformanceTests.swift */,
+				91D833B795652F8F712771EE /* KeyboardSwipeTests.swift */,
 				CB74E590018EA2F7F99F4E07 /* KeyboardThemeTests.swift */,
 				73D41B18CBF71CA1FDC32785 /* PreferencesStoreTests.swift */,
 				A9C6087E732B1E82A4F490AA /* ProseAutocorrectionTests.swift */,
@@ -450,6 +453,7 @@
 				E2C36490B60089033AD8F4F2 /* EditorAccessibilityTests.swift in Sources */,
 				2D7F3B2C80CE03E404732F2E /* KeyboardCompactLayoutTests.swift in Sources */,
 				92D6C6C10261ECF7693F2976 /* KeyboardPerformanceTests.swift in Sources */,
+				0437F834A5C61E283098068A /* KeyboardSwipeTests.swift in Sources */,
 				93C080940C5385A3A0B16EC3 /* KeyboardThemeTests.swift in Sources */,
 				3B3A4512BE89DB4FE3794A46 /* PreferencesStoreTests.swift in Sources */,
 				7CBF398A6E8520902F1D3655 /* ProseAutocorrectionTests.swift in Sources */,
@@ -564,7 +568,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -717,7 +721,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

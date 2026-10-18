@@ -1,8 +1,22 @@
 # Swipe engine research — October 17, 2026
 
-TabForge's current swipe recognizer is a small geometric matcher over a code-oriented vocabulary. `Sources/KeyboardCore/SwipeDecoder.swift` resamples paths to 32 points, filters by endpoints, and ranks template distance. It has no broad language dictionary, word-frequency prior, elastic path alignment, or sentence-context model. Better gesture capture alone will not address those limitations.
+The October 17 evaluation started with a small geometric matcher over 259 unique code-oriented words. It resampled paths to 32 points and ranked template distance. It had no broad English dictionary, word-frequency prior, elastic path alignment, or sentence-context model. The subsequent source iteration is described below; build 11 retains the earlier decoder.
 
-No dependency or model was added during this research. The current beta's Escape, combined tools/settings menu, and Apple text-checking work can ship independently. Swipe should continue to be described as experimental until a replacement is measured.
+None of the engines or models surveyed here is integrated. Swipe remains experimental. The source now includes separately licensed English dictionary data, with [pinned provenance and reproduction](swipe-lexicon.md).
+
+## October 18 source iteration after build 11
+
+A synthetic key-center path for `testing` reproduced the reported `typeof` result. `testing` was absent from the original dictionary, so the decoder could never return it. Other missing words produced similar substitutions, including `programming` → `padding` and `developer` → `docker`.
+
+The source iteration adds 38,604 English word forms from a pinned, filtered ESDB size-35 list. The implementation remains TabForge's own geometric decoder. A reusable endpoint index avoids scanning the whole dictionary for each gesture. Geometry is normalized separately by horizontal and vertical key pitch, so a row error remains significant in compact landscape. A bounded shortlist of 48 candidates receives elastic alignment within four samples to tolerate rounded corners. Invalid, stationary, and poorly matching paths are declined. No frequency or sentence-context model, adaptive learning, network request, or user trace collection was added.
+
+The dictionary/index is loaded on the first eligible swipe and released with transient resources on dismissal or memory pressure. It does not delay ordinary tap-key initialization. Decoding still runs synchronously at gesture completion; development-Mac timing does not establish responsiveness inside a physical keyboard extension.
+
+`Tests/KeyboardCoreTests/SwipeDecoderTests.swift` covers the original report, 42 ordinary/code words across four rendered-style geometries and four synthetic path styles, repeated letters/uneven sampling, invalid inputs, and poor shapes with matching endpoints. A rounded `status` path initially ranked `statues` above it; elastic reranking corrected that regression without weakening the acceptance targets.
+
+For a separate fixed comparison, [Scripts/evaluate-swipe.swift](../Scripts/evaluate-swipe.swift) evaluates 97 mixed words and ten repeated-letter words across six synthetic geometry proportions, using sparse vertices, dense straight segments, and rounded corners with deterministic jitter. These are regression fixtures, not a held-out human accuracy study. The English list covers 95 of the 97 mixed words; `username` and `localhost` remain outside it. Ambiguities such as `god`/`good`, paths passing through extra collinear keys, and heavily rounded paths remain limitations.
+
+The [verification summary](verification.md) records this iteration's tests and measured synthetic results. The procedure below remains necessary before claiming system-keyboard quality or choosing a replacement engine.
 
 ## Candidates
 

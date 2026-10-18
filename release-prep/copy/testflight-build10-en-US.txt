@@ -1,0 +1,5 @@
+TabForge 1.0 (10)
+
+The companion app's Settings now includes Built with credits, creator details, and an Other Apps page for Codable and Taktung. The Privacy details link opens the published TabForge policy.
+
+Please check the new sections at your preferred text size, open Other Apps, and return to Settings. App Store and attribution links open only when selected. Keyboard input behavior is unchanged from build 9.

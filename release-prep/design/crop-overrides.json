@@ -1,0 +1,22 @@
+{
+  "families": {
+    "iphone-medium": {
+      "standard": { "working": { "x": 0, "y": 744, "width": 1206, "height": 1878 } },
+      "dark": { "working": { "x": 0, "y": 744, "width": 1206, "height": 1878 } },
+      "terminal": { "working": { "x": 0, "y": 630, "width": 1206, "height": 1992 } },
+      "settings": { "detail": { "x": 42, "y": 1020, "width": 1122, "height": 920 } }
+    },
+    "ipad-11": {
+      "standard": { "working": { "x": 0, "y": 1776, "width": 1668, "height": 644 }, "code": { "x": 86, "y": 390, "width": 1582, "height": 310 } },
+      "terminal": { "working": { "x": 0, "y": 1776, "width": 1668, "height": 644 }, "code": { "x": 86, "y": 300, "width": 1582, "height": 340 } },
+      "settings": { "detail": { "x": 35, "y": 1550, "width": 1598, "height": 600 } }
+    },
+    "duo-open": {
+      "standard": { "working": { "x": 0, "y": 1040, "width": 2852, "height": 966 }, "code": { "x": 125, "y": 460, "width": 900, "height": 160 } },
+      "settings": { "detail": { "x": 50, "y": 750, "width": 2560, "height": 900 } }
+    },
+    "duo-closed": {
+      "settings": { "detail": { "x": 45, "y": 90, "width": 1110, "height": 980 } }
+    }
+  }
+}

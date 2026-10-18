@@ -1,0 +1,18 @@
+TabForge 1.0 (11) — settings in the keyboard
+
+Full Access is no longer requested. The keyboard stores its preferences and snippets in its own container without an App Group.
+
+Open the keyboard’s gear to find all preferences, terminal options, themes, snippet editing and reset. Creating or editing a snippet uses a separate local draft; select the saved snippet separately to insert it into an app.
+
+The companion contains setup, compatibility help, privacy and source links, licenses, credits and Other Apps. Its Playground and Layouts use temporary preview settings that do not configure the installed keyboard. The playground draft is still saved locally.
+
+Existing keyboard-local preferences are retained. Settings or snippets saved only in an older shared container or the companion are not imported; please select those preferences again in the keyboard.
+
+Please test:
+- Change preferences from the gear, switch apps, dismiss/reopen the keyboard and confirm the choices remain.
+- Create, edit, cancel, insert and delete snippets. Draft keystrokes must not appear in the host app before insertion.
+- Type with overlapping key presses, including held modifiers and navigation controls, then rotate or dismiss the keyboard.
+- Try compact landscape, iPad and supported Duo poses, plus larger accessibility text and VoiceOver.
+- Check literal Terminal/Remote behavior in your usual clients. Those apps decide how control text reaches the remote system.
+
+Autocorrect and experimental vocabulary-limited swipe remain opt-in. On-device voice input remains in the companion playground. iOS controls system Dictation availability.

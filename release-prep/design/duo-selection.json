@@ -1,0 +1,13 @@
+{
+  "slot": "APP_IPHONE_DUO",
+  "maximumCount": 10,
+  "selection": [
+    { "family": "duo-closed", "slide": 1 },
+    { "family": "duo-open", "slide": 1 },
+    { "family": "duo-tabletop", "slide": 1 },
+    { "family": "duo-closed", "slide": 2 },
+    { "family": "duo-open", "slide": 3 },
+    { "family": "duo-open", "slide": 4 },
+    { "family": "duo-open", "slide": 6 }
+  ]
+}

@@ -1,0 +1,25 @@
+TabForge includes a custom keyboard extension and a companion playground, setup help, source/privacy links and on-device voice input. No account, purchase or demo credentials are required.
+
+Keyboard setup:
+1. Open TabForge. The Playground works immediately using TabForge's in-app keyboard.
+2. To test the extension, open iOS Settings > General > Keyboard > Keyboards > Add New Keyboard and choose TabForge.
+3. In an app that permits third-party keyboards, hold the globe key and select TabForge. The globe also provides a method to advance to another keyboard.
+4. This version does not request Full Access or configure an App Group. Use the keyboard's gear menu to configure its layout and behavior and manage custom snippets. These records are saved only in the keyboard extension's local preferences; the companion app does not configure or synchronize them. TabForge has no application networking service and no typed-text logging.
+5. The extension does not launch the companion app. Companion setup, source/privacy information, credits and licenses can be opened directly in the TabForge app.
+6. The companion keyboard and layout guide are labelled previews. Their settings and snippets are held only in memory for the current app process and do not change the installed keyboard. The companion information screen has no installed-keyboard controls. Its playground draft is still saved locally.
+
+Input profiles:
+- Code editor enables eligible pairing, indentation and local text editing. Destructive line actions decline if the host does not expose enough context to verify them.
+- Terminal · ANSI inserts literal tabs, ASCII Control characters and configured ANSI navigation sequences. Use only a client that forwards and interprets these values. It does not synthesize hardware keyboard events.
+- Remote desktop sends literal text with smart transformations disabled. The remote client decides how the text reaches the remote computer. Unsupported key combinations are declined.
+
+Optional smart input:
+- English prose autocorrect defaults off. Turn on Autocorrect prose (English) in the keyboard's gear menu. It uses Apple's public UITextChecker, respects eligible field traits and host opt-outs, skips code-like text, and remains inactive in Terminal, Remote desktop and the companion code playground. Space applies a conservative correction; immediate Delete restores the original spelling.
+- Swipe code words is experimental, defaults off and recognizes a bundled coding vocabulary. It is not Apple QuickPath.
+- Voice to code is in the companion app's Playground toolbar. Tap the microphone, then Start recording. Microphone and Speech permissions are requested for this user-initiated feature. Recognition requires on-device English support and has no cloud fallback. Review the transcript and code preview before Insert. Cancellation, dismissal, backgrounding and audio interruption stop recording. Permission denial or unavailable recognition does not block keyboard use.
+
+Privacy and storage:
+The extension does not persist host text, gesture traces, speech audio or supplementary lexicon entries. Keyboard preferences and user-created snippets are saved in the extension's local UserDefaults. The companion playground draft is saved separately in the app's UserDefaults. A transcript becomes part of the saved draft only after the user inserts it. Existing keyboard-local preferences are retained; earlier shared or companion-only keyboard records are not imported or erased. The app has no accounts, analytics, advertising or remote input service. Public source, privacy details, security policy, and offline licenses remain available in the companion app.
+
+Compatibility:
+Requires iOS/iPadOS 27.0+. Duo-specific geometry is guarded for 27.1. The system substitutes Apple's keyboard in secure and phone fields. Third-party apps may decline keyboard extensions or limit document context. The playground edits text; it does not compile or execute code.

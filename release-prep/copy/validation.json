@@ -1,0 +1,83 @@
+{
+  "locale": "en-US",
+  "version": "1.0",
+  "scope": "offline content validation; remote state is not queried",
+  "fields": {
+    "name": {
+      "characters": 23,
+      "utf8Bytes": 23,
+      "limit": 30,
+      "limitUnit": "characters",
+      "valid": true
+    },
+    "subtitle": {
+      "characters": 29,
+      "utf8Bytes": 29,
+      "limit": 30,
+      "limitUnit": "characters",
+      "valid": true
+    },
+    "keywords": {
+      "characters": 99,
+      "utf8Bytes": 99,
+      "limit": 100,
+      "limitUnit": "UTF-8 bytes",
+      "valid": true
+    },
+    "description": {
+      "characters": 3168,
+      "utf8Bytes": 3169,
+      "limit": 4000,
+      "limitUnit": "characters",
+      "valid": true
+    },
+    "promotionalText": {
+      "characters": 142,
+      "utf8Bytes": 142,
+      "limit": 170,
+      "limitUnit": "characters",
+      "valid": true
+    },
+    "reviewNotes": {
+      "characters": 3966,
+      "utf8Bytes": 3967,
+      "limit": 4000,
+      "limitUnit": "characters",
+      "valid": true
+    }
+  },
+  "checks": {
+    "withinLimits": true,
+    "keywordIndexedFieldOverlap": [],
+    "duplicateKeywords": [],
+    "keywordFormatValid": true,
+    "keywordTermsOverTwoCharacters": true,
+    "keywordCoverageInDescription": {
+      "script": true,
+      "shell": true,
+      "indent": true,
+      "snippets": true,
+      "braces": true,
+      "brackets": true,
+      "arrows": true,
+      "escape": true,
+      "remote": true,
+      "desktop": true,
+      "syntax": true,
+      "editor": true,
+      "punctuation": true
+    },
+    "keywordUtilizationAtLeast90Percent": true,
+    "subtitleAtLeast20Characters": true
+  },
+  "whatsNew": "Intentionally omitted: unavailable for an initial App Store version.",
+  "supportUrl": "https://github.com/jdodsoncollins/TabForge/blob/main/docs/SUPPORT.md",
+  "supportUrlStatus": "Confirm the public page and approved support contact before submission.",
+  "keywordIntelligence": {
+    "astroAvailable": false,
+    "measuredPopularity": false,
+    "measuredDifficulty": false,
+    "measuredRankings": false,
+    "basis": "Feature relevance and comparable public listings only."
+  }
+}

@@ -45,8 +45,12 @@ for name in ("built-with-phone.png", "settings-footer-phone.png", "other-apps-ph
     source = root / "previews" / name
     if source.exists():
         copy(source, Path("companion") / name)
+for name in ("keyboard-local-snippet-editor.png", "build11-largest-text-help.png"):
+    source = root / "previews" / name
+    if source.exists():
+        copy(source, Path("companion") / name)
 for name in ("app-info-en-US.json", "version-en-US.json", "description-en-US.txt",
-             "promotional-text-en-US.txt", "review-notes-en-US.txt", "validation.json"):
+             "promotional-text-en-US.txt", "review-notes-en-US.txt", "privacy-policy-en-US.md", "validation.json"):
     copy(Path("release-prep/copy") / name, Path("listing") / name)
 copy(Path("release-prep/design/header-prompt.md"), "header-prompt.md")
 copy(Path("release-prep/design/duo-selection.json"), "duo-upload-selection.json")
@@ -70,7 +74,7 @@ This package contains **{count} listing images** across {len(families)} layout s
 
 Every keyboard and settings panel is a real native capture. Device frames come from Apple's installed Simulator resources or real Device Hub pose captures. Folded geometry is shown through actual Device Hub renders. Some iPhone and iPad captures are reused proportionally at another output size; that does not establish a separate device test. The asset manifest records the source family and final image hashes. The header is brand artwork; its prompt is included separately.
 
-The App Store version is a draft and has not been submitted for review. Build {args.build_number} passed Apple's binary validation and was selected for that draft. Manual release is configured. Pricing is Free, private reviewer contact is saved, and public support email and the live privacy policy are in place. Publication of the saved privacy declaration remains pending explicit owner approval. Account requirements must also be checked before a future submission. Simulator captures do not certify physical touch, speech availability, memory-pressure survival, or every third-party host.
+The App Store version is a draft and has not been submitted for review. Build {args.build_number} passed Apple's binary validation and was selected for that draft. Manual release is configured. Pricing is Free, private reviewer contact is saved, and public support email and the updated live privacy policy are in place. The owner-approved Data Not Collected privacy disclosure is published. Account requirements must also be checked before a future submission. Simulator captures do not certify physical touch, speech availability, memory-pressure survival, or every third-party host.
 
 This preview excludes private account records, private contact details, credentials, signing resources, device inventories, logs, original captures, archives and IPA files. The approved public support email remains in the listing and policy materials.
 """)

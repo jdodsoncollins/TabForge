@@ -18,7 +18,7 @@ The app's Settings screen links directly to this repository, its privacy documen
 
 The bottom of Settings includes framework and palette credits, creator details, and an Other Apps page for Codable and Taktung. Their icons are bundled; external pages open only when selected.
 
-The App Store [privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) must be updated with this source's no-Full-Access revision before releasing it. [PRIVACY.md](PRIVACY.md) describes the current source.
+The App Store [privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) and [repository privacy documentation](PRIVACY.md) describe the same keyboard-local storage, temporary previews, and absence of Full Access or App Group sharing.
 
 ## See the keyboard
 

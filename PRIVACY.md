@@ -1,6 +1,6 @@
 # Privacy and data handling
 
-Questions can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). The App Store policy address is [jeremycollins.net/tabforge-privacy-policy](https://www.jeremycollins.net/tabforge-privacy-policy). The no-Full-Access policy revision prepared with this source must also be published at that address; an older version may still describe optional shared settings until that update is complete.
+Questions can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). The App Store policy address is [jeremycollins.net/tabforge-privacy-policy](https://www.jeremycollins.net/tabforge-privacy-policy).
 
 TabForge's app and keyboard contain no analytics, advertising, account system, or application networking service. The keyboard does not send keystrokes, surrounding text, snippets, swipe gestures, or spelling requests to a TabForge server. The code is available for inspection under the repository's [MIT license](LICENSE).
 

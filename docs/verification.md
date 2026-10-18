@@ -13,15 +13,23 @@ Current evidence:
 | Check | Result | Scope |
 | --- | --- | --- |
 | Core package | 83 methods in nine suites pass | Current revision |
-| iPad hosted suite | 77 methods pass, zero failures/skips/runtime warnings | iPad Pro 11-inch M5, iPadOS 27.0; before final weak-reference/cancelled-control and Dynamic Type snippet cleanup |
-| Duo hosted suite | 77 methods pass, zero failures/skips/runtime warnings | Duo Simulator, iOS 27.1; before the same final cleanup |
-| Phone hosted/UI regression | In progress | Await the UI agent's completed result |
-| Final cleanup checks | Pending focused reruns | Must correspond to the final source |
-| Build 11 archive/export and remote checks | Pending | Source version alone does not establish signing, upload, processing, or attachment |
+| iPad hosted suite | 77 methods pass, zero failures/skips/runtime warnings | iPad Pro 11-inch M5, iPadOS 27.0; followed by the final focused checks below |
+| Duo hosted suite | 77 methods pass, zero failures/skips/runtime warnings | Duo Simulator, iOS 27.1; followed by the final focused checks below |
+| Phone hosted suite | 79 methods pass | 21 XCTest and 58 Swift Testing methods |
+| Final iPad/Duo cleanup | Nine methods; 15 passing executions per device, zero failures/skips/runtime warnings | Final cancelled-control/weak-reference and Dynamic Type snippet cleanup |
+| Phone UI flows | All eligible flows passed across the initial run and focused reruns | Initial 15-method run had two device/pose skips and three harness failures; see qualification below |
+| Build 11 archive/export | All 13 artifact checks pass; Apple server binary validation passes | Versions, signed entitlements, privacy, signatures, resources and dependencies |
+| Build 11 processing/attachment | VALID, attached to the draft, internal beta testing active | Existing all-builds internal group and automatic notifications verified |
+| App Store API readiness | Zero errors, warnings, or blockers | Build 11 IPA and URL checks; manual release and non-API privacy publication are informational |
+| Current media | Three native capture tests pass; all 31 screenshots COMPLETE | Five Settings slides updated, 26 retained; final remote order/checksums match; header assigned in draft |
 
-Build 10 remains the last confirmed valid/attached internal beta while build 11 is prepared. The final archive must verify no Full Access request, no signed App Group entitlement, current local-only privacy manifests, correct versions/minimum OS, licenses/notices, and icon resources. App Store preparation remains unsubmitted and under manual release control. [Release readiness](../release-prep/readiness.md) tracks current media, metadata, policy publication and archive gates.
+The phone hosted result is in `build11-final-checks.xcresult`. Its command exited unsuccessfully because the largest-text menu-scroll harness still needed correction; the hosted suite, snippet flow, and pairing-toggle flow passed. The corrected largest-text settings flow and snippet flow then passed in `build11-a11y-final.xcresult`, whose command completed successfully. The initial combined UI invocation was terminated after tests completed while it emitted package-graph messages. These are separate receipts, not one clean full UI invocation.
 
-The website policy revision for the new storage behavior is prepared but not yet confirmed live. The repository [privacy policy](../PRIVACY.md) describes the new source. A prior HTTP success for the website does not prove the new text was deployed. App Privacy is saved as a draft; its Publish action was rejected by automatic approval review and awaits explicit user approval. No retry or bypass is authorized by a passing test.
+The actual archived and exported app/extension bundles have no Full Access request or signed App Group entitlement. Both local-only manifests match source and declare only UserDefaults reason `CA92.1`. Signatures, versions/minimum OS, device families, exact MIT/notices, and light/dark/tinted icons passed inspection; no test bundles or third-party frameworks ship. Remote readbacks confirm that build 11 processed successfully and is attached to version 1.0 in Prepare for Submission. Internal testing access is verified. App Store preparation remains unsubmitted and under manual release control. [Release readiness](../release-prep/readiness.md) records the completed listing, media, privacy, and owner-review state.
+
+The current [website privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) is deployed to production and verified by a fresh HTTP 200 response plus live content inspection. It matches the repository [privacy policy](../PRIVACY.md). The owner explicitly approved both privacy publications; the authenticated App Store Connect browser confirmed **Data Not Collected** as published. This does not submit the app for review.
+
+The no-sharing source is [public under MIT](https://github.com/jdodsoncollins/TabForge/commit/9c8dc83e10af08a591ce35b4d3b536645a8af6d7), and its [public CI run passed](https://github.com/jdodsoncollins/TabForge/actions/runs/39140923632). Signing/account details and raw receipts remain private.
 
 ## Earlier evidence, kept as history
 

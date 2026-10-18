@@ -328,6 +328,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         key("Return").tap()
         key("e").tap()
         XCTAssertEqual(editor.value as? String, initial)
+        let draft = XCTAttachment(screenshot: app.screenshot())
+        draft.name = "Keyboard-local-snippet-editor"
+        draft.lifetime = .keepAlways
+        add(draft)
         app.buttons["snippet.save"].tap()
         XCTAssertFalse(app.segmentedControls["snippet.field"].exists)
         XCTAssertEqual(editor.value as? String, initial)
@@ -421,11 +425,16 @@ final class ScriptKeyboardUITests: XCTestCase {
             let visible = menu.buttons.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }
                 .map { $0.frame.intersection(app.frame) }.filter { !$0.isEmpty }.sorted { $0.minY < $1.minY }
             guard visible.count >= 2 else { break }
-            let lower = visible[max(1, visible.count - 2)]
-            let upper = visible[0]
+            let lower = visible[visible.count - 1]
+            // The top item can be clipped under the menu's rounded edge.
+            // Start on an interior visible row, away from the status bar.
+            let upper = visible[visible.count >= 3 ? 1 : 0]
             let point = app.coordinate(withNormalizedOffset: .zero)
-            point.withOffset(CGVector(dx: lower.midX - app.frame.minX, dy: lower.midY - app.frame.minY))
-                .press(forDuration: 0.05, thenDragTo: point.withOffset(CGVector(dx: upper.midX - app.frame.minX, dy: upper.midY - app.frame.minY)))
+            // UIKit anchors this long keyboard menu at its bottom. Its initial
+            // visible actions are Editing actions and Snippets; preferences
+            // above them are revealed by dragging the menu content downward.
+            point.withOffset(CGVector(dx: upper.midX - app.frame.minX, dy: upper.midY - app.frame.minY))
+                .press(forDuration: 0.05, thenDragTo: point.withOffset(CGVector(dx: lower.midX - app.frame.minX, dy: lower.midY - app.frame.minY)))
         }
         XCTFail("Keyboard menu option could not be reached: \(title)")
     }

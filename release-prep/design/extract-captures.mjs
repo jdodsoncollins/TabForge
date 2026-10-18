@@ -186,7 +186,7 @@ for (const name of requestedCaptures) {
     // but does not export their frames. Keep the complete real screen until
     // a reviewer supplies a measured, tighter settings detail crop.
     entry.detail = { x: 0, y: 0, width: pixels.width, height: pixels.height };
-    entry.cropReview = 'Settings detail is the full native capture; review a tighter source/privacy/security crop before final artwork.';
+    entry.cropReview = 'Use the full native Settings capture for complete device context. The capture test verifies complete source/privacy/security rows; review final legibility.';
   }
   const override = overrides[name];
   if (override) {
@@ -204,11 +204,11 @@ for (const name of requestedCaptures) {
 }
 manifest.families[family] = familyEntries;
 for (const reusedFamily of reuseFamilies) {
-  // This is explicit, never automatic. Frameless UI may be composed at a
+  // This is explicit, never automatic. Native UI may be composed at a
   // proportional scale, but provenance must retain the actual source family.
   manifest.families[reusedFamily] = Object.fromEntries(Object.entries(familyEntries).map(([name, entry]) => [name, {
     ...entry,
-    provenance: { ...entry.provenance, reusedForFamily: reusedFamily, reuseNote: 'Same native UI capture, scaled proportionally in frameless artwork; no other device bezel or shape is implied.' },
+    provenance: { ...entry.provenance, reusedForFamily: reusedFamily, reuseNote: 'Same native device UI capture, scaled proportionally within the target marketing canvas; any hardware frame continues to represent the captured source device.' },
   }]));
 }
 manifest.content = 'Bundled synthetic examples captured through native app interactions';

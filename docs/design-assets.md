@@ -17,3 +17,5 @@ The App Store screenshot renderer also uses unchanged native app captures inside
 Apple's device artwork and trademarks belong to Apple and are not offered under this repository's MIT license. The repository includes finished TabForge screenshots, not Apple's original Simulator resource files. The images do not imply endorsement by Apple.
 
 The separate product-page header is brand artwork. It is not evidence of keyboard behavior or a device capture. It should remain separate from the native screenshot provenance.
+
+Source/settings slides are refreshed separately when the companion information changes. Their recorded native UI capture can change while the real Simulator chassis and other keyboard/pose figures remain the same. Keyboard appearance examples show actual keyboard states rather than a companion theme-picker page.

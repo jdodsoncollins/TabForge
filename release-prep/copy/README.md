@@ -1,6 +1,6 @@
 # US English listing copy
 
-Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `SECURITY.md`, Apple's product-page documentation and comparable public keyboard listings. The current local revision describes keyboard-only settings and snippets with no Full Access or App Group. It supersedes the earlier copy saved to App Store Connect; the release operator must stage and read back these changed fields after the matching binary is verified. This local edit does not update the remote listing or send anything to App Review. Private receipts remain in ignored release artifacts.
+Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `SECURITY.md`, Apple's product-page documentation and comparable public keyboard listings. The current local revision describes keyboard-only settings and snippets with no Full Access or App Group. The revised description and reviewer notes are saved in the editable App Store Connect draft. Build 11 passed the archive audit and Apple's binary validation. No App Review submission has been made. Private receipts remain in ignored release artifacts.
 
 ## Proposed presentation
 
@@ -11,7 +11,7 @@ Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `S
 - **Promotional text:** see `promotional-text-en-US.txt`.
 - **Description:** see `description-en-US.txt`.
 
-`app-info-en-US.json` and `version-en-US.json` use App Store Connect's canonical field names. The Support URL points to the repository's `docs/SUPPORT.md`, which includes the owner's approved public support email, GitHub Issues and private security reporting. The Privacy Policy URL remains `https://www.jeremycollins.net/tabforge-privacy-policy`. Earlier HTTP and metadata checks established these destinations; their new no-sharing policy/support revisions still need publication and a fresh consistency check. The website-ready replacement is [privacy-policy-en-US.md](privacy-policy-en-US.md). Preserve private App Review contact information separately. The first App Store version has no What's New field; `whatsNew` is intentionally omitted rather than filled with a beta changelog.
+`app-info-en-US.json` and `version-en-US.json` use App Store Connect's canonical field names. The Support URL points to the repository's `docs/SUPPORT.md`, which includes the owner's approved public support email, GitHub Issues and private security reporting. The Privacy Policy URL remains `https://www.jeremycollins.net/tabforge-privacy-policy`. The live website policy now describes the same no-sharing design. Its published text is represented by [privacy-policy-en-US.md](privacy-policy-en-US.md). Preserve private App Review contact information separately. The first App Store version has no What's New field; `whatsNew` is intentionally omitted rather than filled with a beta changelog.
 
 The local audit and exact Unicode/UTF-8 field lengths are in `validation.json`. Keywords are all ASCII, so the recommended field fits both Apple's 100-byte platform reference and the product-page guidance's 100-character wording. `validate.py` recomputes the audit after edits. File terminators are excluded from listing text. Passing `--staging-dir artifacts/app-store-release-2026-10-18/metadata` also writes the app-info and version localization files. The ignored release-artifact directory holds ASC identifiers and validation receipts separately from this public copy directory.
 
@@ -41,7 +41,7 @@ The fifth image adapts to the actual device capture; it is one image per device 
 
 ## Release readiness checks
 
-The [release-readiness review](../readiness.md) records earlier release evidence. Its build 9/10 checks do not verify the new storage and settings revision. Before using this copy:
+The [release-readiness review](../readiness.md) distinguishes current build 11 checks from historical build 9/10 evidence. Before a future App Review submission:
 
 1. Verify a matching new binary has no Full Access request, App Group entitlement or sharing code, and that keyboard settings/snippet management works in the extension without altering host text during snippet editing.
 2. Verify the companion has no persistent keyboard controls: previews use only memory while the playground draft remains saved independently.

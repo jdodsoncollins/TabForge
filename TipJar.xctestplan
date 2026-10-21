@@ -1,0 +1,38 @@
+{
+  "configurations": [
+    {
+      "id": "5E61CB8C-8EC9-487C-8233-D67D2094A105",
+      "name": "Local StoreKit",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "storeKitConfigurationFileReference": {
+      "identifier": "Configuration/TipJar.storekit"
+    },
+    "targetForVariableExpansion": {
+      "containerPath": "container:ScriptKeyboard.xcodeproj",
+      "identifier": "4A920E04AAA6742DE6B829F3",
+      "name": "ScriptKeyboard"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:ScriptKeyboard.xcodeproj",
+        "identifier": "70BDCC2C1A54580AA64D0189",
+        "name": "ScriptKeyboardTests"
+      }
+    },
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:ScriptKeyboard.xcodeproj",
+        "identifier": "E42545364EFAC438B57F1080",
+        "name": "ScriptKeyboardUITests"
+      }
+    }
+  ],
+  "version": 1
+}

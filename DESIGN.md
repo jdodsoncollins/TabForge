@@ -21,6 +21,8 @@ The companion app and extension are separate processes with separate storage. Th
 
 The companion keyboard and layout guide are explicitly previews. Their independent settings and snippets live only in memory for the current app process, so preview changes cannot configure the installed extension or persist as companion keyboard preferences. The playground draft is separate and remains saved locally.
 
+Version 1.0.1 (15) presents the optional Tip Jar through the initiating SwiftUI view's scene-aware Apple purchase action. The version and five tips were submitted on October 21, 2026; the version and review submission are WAITING_FOR_REVIEW, with release after approval configured. Build 15 remains VALID and available to the existing internal TestFlight group. The live version 1.0 (12) has no tips. StoreKit remains in the companion app, with no TabForge backend, access to extension records or new keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
+
 ## Text editing
 
 `TextDocument` is main-actor isolated. UIKit selection and movement offsets use UTF-16; bounded nearby-context methods count Swift extended grapheme clusters. Preserve that distinction when handling emoji or combining marks.
@@ -59,7 +61,7 @@ Test phone portrait/landscape, iPad full/floating/split windows, and relevant Du
 
 Correction commits on Space. Immediately pressing Delete restores the original spelling and rejects that guess once. Document identity and text anchors are checked before replacement and undo. Missing or changing proxy evidence prevents an unverified edit. An asynchronously obtained, bounded supplementary lexicon protects names and shortcut inputs in memory; it is never persisted.
 
-**Swipe typing** is an opt-in experimental geometric decoder over a bundled coding vocabulary. It provides alternatives through the gear menu and is not unrestricted prose recognition. Apple QuickPath has no public decoder API for this implementation. Any replacement must earn its place through held-out real gestures, latency, memory, lifecycle, licensing, and data-provenance checks.
+**Swipe typing** is an opt-in experimental geometric decoder over bundled English and programming vocabularies. It provides alternatives through the gear menu and does not provide a general language model. The English data comes from a pinned ESDB small dictionary with separate notices. A per-keyboard decoder indexes candidates by endpoints and normalizes horizontal/vertical key pitches. It reranks at most 48 candidates with bounded elastic alignment and is released on dismissal or memory pressure. Gesture sessions are cancelled on layout, input, or mode changes; alternatives require a matching document anchor, menu generation, and verified replacement. Swipe declines an active text selection rather than retaining or repeatedly comparing its potentially large contents; tap typing can replace that selection. Apple QuickPath has no public decoder API for this implementation. Any replacement must earn its place through held-out real gestures, latency, memory, lifecycle, licensing, and data-provenance checks.
 
 **Voice to code** lives in the companion app because the extension cannot record microphone audio. The user starts recording, grants permissions, reviews the transcript and punctuation conversion, then inserts it. Recognition requires on-device English support and has no cloud fallback. System Dictation remains under iOS control. The native playground allows system Writing Tools where supported; generated changes still require user review.
 
@@ -76,6 +78,12 @@ The companion app bundles the repository's `LICENSE` and `THIRD_PARTY_NOTICES.md
 The companion initializes its preview store without a persistent defaults backend. Do not replace that memory-only store with app `UserDefaults`, a named suite, or a shared container. Its draft persistence is the existing separate `playground.draft` entry.
 
 iOS Standard follows system light/dark by default. Code palettes are explicit alternatives. Keep palette definitions centralized in `KeyboardPalette`, use semantic colors where appropriate, and preserve legibility across appearance, Bold Text, and increased-contrast settings.
+
+## Optional tips (version 1.0.1)
+
+The companion's Tip Jar offers five repeatable consumable purchases. Tips unlock no features, add no subscription, and do not affect keyboard behavior. Show a purchasable price only after StoreKit returns the matching product, using `Product.displayPrice` for its storefront and currency. Loading, missing products, disabled purchases, cancellation, pending approval, verification failure, and purchase failure must leave the rest of the app usable.
+
+An app-scoped transaction listener handles verified matching tip transactions, including completions delivered after the purchase screen closes. Finish a verified tip after the app completes its acknowledgement; do not treat an unverified transaction as success or finish unrelated products. The app keeps no separate receipt, purchase history, or tip total in its preferences. StoreKit and the App Store maintain their own transaction records. There is no durable entitlement to restore for these consumable tips.
 
 ## Accessibility
 

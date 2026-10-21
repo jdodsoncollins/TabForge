@@ -381,13 +381,18 @@ final class ScriptKeyboardUITests: XCTestCase {
         add(footer)
         otherApps.tap()
         XCTAssertTrue(app.navigationBars["Other Apps"].waitForExistence(timeout: 5))
-        let codable = element("otherApps.codable")
-        let taktung = element("otherApps.taktung")
         let appsList = app.collectionViews.firstMatch
-        scrollToVisible(codable, in: appsList, app: app)
-        XCTAssertTrue(codable.label.contains("Codable"))
-        scrollToVisible(taktung, in: appsList, app: app)
-        XCTAssertTrue(taktung.label.contains("Taktung"))
+        for (identifier, name) in [
+            ("otherApps.codable", "Codable"),
+            ("otherApps.taktung", "Taktung"),
+            ("otherApps.paperGrain", "Paper & Grain")
+        ] {
+            let appLink = element(identifier)
+            scrollToVisible(appLink, in: appsList, app: app)
+            XCTAssertTrue(appLink.label.contains(name))
+            XCTAssertGreaterThanOrEqual(appLink.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(appLink.frame.height, 44)
+        }
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = accessibilityText ? "Other-apps-largest-text" : "Other-apps"
         screenshot.lifetime = .keepAlways

@@ -2,9 +2,57 @@
 
 This is a public summary of local checks, not an independent security audit. Source changes do not update an installed App Store or TestFlight binary. Raw device inventories, signing/upload records, captures, and result bundles stay in ignored artifacts; published tests use synthetic text.
 
-## Current candidate: 1.0 (11), October 18, 2026
+## Version 1.0.1 submission, October 21, 2026
 
-The current revision removes the keyboard's Full Access request and App Group sharing. Installed-keyboard settings and snippets belong to the extension's local store. The companion's keyboard/layout preview settings and snippets stay only in memory; its playground draft is saved separately. Existing keyboard-local records are retained, and older shared-container or companion preference records are neither imported nor erased.
+Version 1.0 (12) is live. Version 1.0.1 (15) changes the companion Tip Jar to use SwiftUI's scene-aware purchase action. It passed 22 focused checks and all 24 signed archive/export checks. The distribution signature and disabled debugging are verified, with no Full Access, signed App Group entitlement, test configuration or private files. Apple processed build 15 as VALID; access for the existing internal TestFlight group is verified, its testing notes match the saved copy, and strict TestFlight validation has zero errors, warnings, informational results or blockers. Version 1.0.1 and all five tips were submitted on October 21, 2026 with zero submission blockers. The version and parent review are WAITING_FOR_REVIEW, and release type is AFTER_APPROVAL. Earlier builds 13 and 14 remain historical evidence.
+
+The unchanged core and build-configuration source passed 88 tests in ten suites and five Python tests. Before the build 15 purchase change, phone and iPad passed the 15 mock-store methods, native StoreKit lifecycle checks and complete Tip Jar UI runs, including corrected full-screen navigation and strict landscape waits. Build 14's final two Other Apps phone cases passed at normal/largest text after the URL update; all three links were reachable with targets at least 44 points in both dimensions, and captures were reviewed.
+
+Duo's isolated generic-purchase cancellation test failed in 31.391 seconds. The unchanged test passed in 28.265 seconds after the scene-aware change. A broader isolated run exited successfully in 92.28 seconds with 18 passing checks: 15 mock methods, the native lifecycle test, native cancellation and repeated tips with Back navigation. The native lifecycle covered all five prices, two Kind Tip purchases and Ask to Buy approval. Phone and iPad then passed both UI tests on each device: four runs with zero failures, with the serial command exiting successfully in 163.31 seconds. These are 22 focused checks across the three simulators. The actual Xcode Kind Tip confirmation and no-charge test message were visually checked. This supersedes the earlier local Duo checkout failure; its earlier largest-text case also passed. Actual Duo landscape/pose checks, physical VoiceOver and real TestFlight sandbox/device purchases remain unverified. See [StoreKit testing](storekit-testing.md) for the test boundaries.
+
+All 31 App Store screenshots and all three 16-second App Previews are COMPLETE; preview remote MD5 checksums match local files. One header placement is inherited. The same six review items for the app and five tips were submitted with build 15. Canonical Marketing and Privacy Policy URLs read back exactly. The [product page](https://www.jeremycollins.net/tabforge) and October 21 [privacy policy](https://www.jeremycollins.net/tabforge/privacy) are published and freshly verified HTTP 200, describing optional Apple-operated tips, free features and the reviewed data boundaries. The public Data Not Collected label was freshly verified. No legal agreement was accepted during submission. See [release readiness](../release-prep/readiness.md) for the remaining physical-device checks.
+
+## Build 12 swipe and release evidence, October 18, 2026
+
+Build 12 adds a bundled offline English dictionary, endpoint indexing, key-pitch normalization, bounded elastic reranking, and gesture/replacement invalidation. Swipe remains opt-in and experimental. [Research and remaining evaluation](swipe-engine-research-2026-10-17.md) and [dictionary provenance](swipe-lexicon.md) explain the scope and data license.
+
+The original `testing` → `typeof` report reproduced with a synthetic path through key centers. The old dictionary did not contain `testing`. The regression now returns `testing`, and a rounded `status` path that initially returned `statues` now returns `status`.
+
+- Full core package: **88 methods in ten suites pass**, including the four-geometry/four-path-style swipe matrix and rejection of poor paths with matching endpoints.
+- Shared UIKit suites passed on phone, iPad and Duo: **94 methods / 198 executions per device**, with no failures or skips, before the last small review changes.
+- Final focused swipe checks after all review fixes: **19 methods / 24 executions per device**, with no failures or skips. These cover repeated-word menus, native-editor replacement callbacks and stale alternatives after cursor scrubbing. They invoke the shared renderer with synthetic gestures; they do not exercise physical touches. Tested runtime sources match build 12; the build number changed from 11 to 12 afterward.
+- Both the companion app and embedded keyboard contain the exact generated English resource.
+- Build-configuration Python suite: **five tests pass**.
+- Dictionary: 38,604 English forms, 343,537 bytes; its SHA-256 matches the documented generated resource.
+
+The signed build 12 archive and exported IPA pass all 19 artifact checks, including exact dictionary copies and notices in the app and extension, signatures, privacy manifests, light/dark/tinted icons and packaging. Signed bundles have no App Group entitlement and do not request Full Access. An unused provisioning-profile allowance is not a signed app entitlement.
+
+Apple processed build 12 as VALID. Its internal TestFlight group has access, and the What to Test notes read back exactly. App Store version 1.0 was submitted with build 12 and its linked header and is now live. This replaces the earlier build 11 submission at the owner's request. The updated description and reviewer notes match the final local copy; all 31 retained screenshots are COMPLETE with matching ordered source checksums. Humanizer 3.1.0 was applied to the listing and image copy; no image wording required a change.
+
+Build 12 IPA and public-URL readiness checks report zero errors, warnings or blockers, plus one informational result because the public API cannot verify privacy publication. Earlier authenticated-browser evidence verifies the published Data Not Collected disclosure. The TestFlight validator reports no issues. The app remains Free; build 12 was approved and released after this validation.
+
+The fixed public benchmark uses 97 mixed words, of which 95 occur in the new vocabulary. It also checks ten repeated-letter fixtures separately. The table shows the rounded-corner/jitter subset, with identical synthetic traces before and after; it does not measure accuracy on real fingers.
+
+| Synthetic proportions | Original top one / top three | Revised top one / top three |
+| --- | --- | --- |
+| Original regression geometry | 36 / 36 of 97 | 90 / 93 of 97 |
+| Phone portrait | 36 / 36 of 97 | 92 / 94 of 97 |
+| Phone landscape | 35 / 36 of 97 | 88 / 89 of 97 |
+| iPad full width | 36 / 36 of 97 | 92 / 93 of 97 |
+| Duo open | 36 / 36 of 97 | 92 / 94 of 97 |
+| Duo tabletop | 36 / 36 of 97 | 92 / 94 of 97 |
+
+The revised dense-center traces return the intended first candidate for 93–94 of 97 words and include it in the first three for all 95 covered words. `username` and `localhost` are outside the bundled vocabulary. Repeated-letter and collinear-path ambiguities remain; alternatives can help, and tap typing remains necessary for some identifiers.
+
+An optimized development-Mac run sampled 101 warm decodes per geometry. Medians were 1.03–1.42 ms and p95 values 4.01–5.29 ms. One decoder construction took 24.8 ms after the benchmark had already read the dictionary for coverage; this is not a cold extension measurement. Decoding is synchronous at gesture completion. These results establish neither physical-device latency nor the extension's resident/peak memory cost. No eviction guarantee is made.
+
+Run [Scripts/evaluate-swipe.swift](../Scripts/evaluate-swipe.swift) with the commands in its header to reproduce the fixture comparison. Raw logs and JSON stay in ignored `artifacts/swipe-evaluation/`; every evaluated word/path is synthetic.
+
+## Build 11 release evidence, October 18, 2026
+
+This is historical evidence. Its review submission was withdrawn and replaced by build 12 after the swipe work passed its checks.
+
+Build 11 removes the keyboard's Full Access request and App Group sharing. Installed-keyboard settings and snippets belong to the extension's local store. The companion's keyboard/layout preview settings and snippets stay only in memory; its playground draft is saved separately. Existing keyboard-local records are retained, and older shared-container or companion preference records are neither imported nor erased.
 
 The gear owns keyboard settings and snippet creation, editing, deletion, and reset. Snippet drafts use a separate local document; editing/cancelling a draft and saving it are distinct from inserting a saved snippet into the host. Regression coverage includes host isolation, Unicode and size limits, held-key save/cancel behavior, stale cancelled controls, independent preference stores, and memory-only previews.
 
@@ -12,22 +60,22 @@ Current evidence:
 
 | Check | Result | Scope |
 | --- | --- | --- |
-| Core package | 83 methods in nine suites pass | Current revision |
+| Core package | 83 methods in nine suites pass | Build 11 source |
 | iPad hosted suite | 77 methods pass, zero failures/skips/runtime warnings | iPad Pro 11-inch M5, iPadOS 27.0; followed by the final focused checks below |
 | Duo hosted suite | 77 methods pass, zero failures/skips/runtime warnings | Duo Simulator, iOS 27.1; followed by the final focused checks below |
 | Phone hosted suite | 79 methods pass | 21 XCTest and 58 Swift Testing methods |
 | Final iPad/Duo cleanup | Nine methods; 15 passing executions per device, zero failures/skips/runtime warnings | Final cancelled-control/weak-reference and Dynamic Type snippet cleanup |
 | Phone UI flows | All eligible flows passed across the initial run and focused reruns | Initial 15-method run had two device/pose skips and three harness failures; see qualification below |
 | Build 11 archive/export | All 13 artifact checks pass; Apple server binary validation passes | Versions, signed entitlements, privacy, signatures, resources and dependencies |
-| Build 11 processing/attachment | VALID, attached to the draft, internal beta testing active | Existing all-builds internal group and automatic notifications verified |
-| App Store API readiness | Zero errors, warnings, or blockers | Build 11 IPA and URL checks; manual release and non-API privacy publication are informational |
-| Current media | Three native capture tests pass; all 31 screenshots COMPLETE | Five Settings slides updated, 26 retained; final remote order/checksums match; header assigned in draft |
+| Build 11 processing/attachment | VALID, attached to submitted version 1.0, internal beta testing active | Existing all-builds internal group and automatic notifications verified |
+| App Store API readiness | Zero errors, warnings, or blockers | Build 11 IPA and URL checks; final validation retains only non-API privacy publication as informational |
+| Current media | Three native capture tests pass; all 31 screenshots COMPLETE | Five Settings slides updated, 26 retained; final remote order/checksums match; linked header Waiting for Review |
 
 The phone hosted result is in `build11-final-checks.xcresult`. Its command exited unsuccessfully because the largest-text menu-scroll harness still needed correction; the hosted suite, snippet flow, and pairing-toggle flow passed. The corrected largest-text settings flow and snippet flow then passed in `build11-a11y-final.xcresult`, whose command completed successfully. The initial combined UI invocation was terminated after tests completed while it emitted package-graph messages. These are separate receipts, not one clean full UI invocation.
 
-The actual archived and exported app/extension bundles have no Full Access request or signed App Group entitlement. Both local-only manifests match source and declare only UserDefaults reason `CA92.1`. Signatures, versions/minimum OS, device families, exact MIT/notices, and light/dark/tinted icons passed inspection; no test bundles or third-party frameworks ship. Remote readbacks confirm that build 11 processed successfully and is attached to version 1.0 in Prepare for Submission. Internal testing access is verified. App Store preparation remains unsubmitted and under manual release control. [Release readiness](../release-prep/readiness.md) records the completed listing, media, privacy, and owner-review state.
+The actual archived and exported app/extension bundles have no Full Access request or signed App Group entitlement. Both local-only manifests match source and declare only UserDefaults reason `CA92.1`. Signatures, versions/minimum OS, device families, exact MIT/notices, and light/dark/tinted icons passed inspection; no test bundles or third-party frameworks ship. Remote readbacks confirm that build 11 processed successfully and is attached to version 1.0. Internal testing access is verified. After the owner approved the listing and artwork, the description and promotional text received a final Humanizer 3.1.0 pass. Version 1.0 (11) and its linked header were submitted on October 18, 2026; both read back as Waiting for Review. The app is Free, with release after approval configured. [Release readiness](../release-prep/readiness.md) records the listing, media, privacy and submission evidence.
 
-The current [website privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) is deployed to production and verified by a fresh HTTP 200 response plus live content inspection. It matches the repository [privacy policy](../PRIVACY.md). The owner explicitly approved both privacy publications; the authenticated App Store Connect browser confirmed **Data Not Collected** as published. This does not submit the app for review.
+The October 18 privacy publication matched that historical release. The current October 21 website policy and privacy-label verification are recorded in the version 1.0.1 section above.
 
 The no-sharing source is [public under MIT](https://github.com/jdodsoncollins/TabForge/commit/9c8dc83e10af08a591ce35b4d3b536645a8af6d7), and its [public CI run passed](https://github.com/jdodsoncollins/TabForge/actions/runs/39140923632). Signing/account details and raw receipts remain private.
 

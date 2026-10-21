@@ -1,6 +1,6 @@
 {
   "locale": "en-US",
-  "version": "1.0",
+  "version": "1.0.1",
   "scope": "offline content validation; remote state is not queried",
   "fields": {
     "name": {
@@ -25,22 +25,29 @@
       "valid": true
     },
     "description": {
-      "characters": 3168,
-      "utf8Bytes": 3169,
+      "characters": 3449,
+      "utf8Bytes": 3450,
       "limit": 4000,
       "limitUnit": "characters",
       "valid": true
     },
     "promotionalText": {
-      "characters": 142,
-      "utf8Bytes": 142,
+      "characters": 149,
+      "utf8Bytes": 149,
       "limit": 170,
       "limitUnit": "characters",
       "valid": true
     },
     "reviewNotes": {
-      "characters": 3966,
-      "utf8Bytes": 3967,
+      "characters": 3904,
+      "utf8Bytes": 3905,
+      "limit": 4000,
+      "limitUnit": "characters",
+      "valid": true
+    },
+    "whatsNew": {
+      "characters": 247,
+      "utf8Bytes": 247,
       "limit": 4000,
       "limitUnit": "characters",
       "valid": true
@@ -70,7 +77,7 @@
     "keywordUtilizationAtLeast90Percent": true,
     "subtitleAtLeast20Characters": true
   },
-  "whatsNew": "Intentionally omitted: unavailable for an initial App Store version.",
+  "whatsNew": "Version 1.0.1 update notes are included in canonical metadata.",
   "supportUrl": "https://github.com/jdodsoncollins/TabForge/blob/main/docs/SUPPORT.md",
   "supportUrlStatus": "Confirm the public page and approved support contact before submission.",
   "keywordIntelligence": {

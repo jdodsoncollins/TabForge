@@ -69,12 +69,14 @@ final class KeyboardViewController: UIInputViewController {
     override func textWillChange(_ textInput: (any UITextInput)?) {
         super.textWillChange(textInput)
         keyboard?.engine.invalidateAutocorrection()
+        keyboard?.invalidateSwipeContext()
     }
     override func selectionWillChange(_ textInput: (any UITextInput)?) {
         super.selectionWillChange(textInput)
         // UITextInputDelegate reports host-owned changes, such as a tap moving
         // the cursor. A prior correction must never follow the user elsewhere.
         keyboard?.engine.invalidateAutocorrection()
+        keyboard?.invalidateSwipeContext()
     }
     override func selectionDidChange(_ textInput: (any UITextInput)?) {
         super.selectionDidChange(textInput)

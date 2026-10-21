@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.iOS("27.0"), .macOS(.v15)],
     products: [.library(name: "KeyboardCore", targets: ["KeyboardCore"])],
     targets: [
-        .target(name: "KeyboardCore"),
+        .target(name: "KeyboardCore", resources: [.process("Resources")]),
         .testTarget(name: "KeyboardCoreTests", dependencies: ["KeyboardCore"])
     ]
 )

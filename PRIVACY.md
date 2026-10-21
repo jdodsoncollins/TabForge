@@ -10,7 +10,7 @@ This document describes TabForge's implementation. It does not describe the data
 
 The extension receives text and field information that iOS and the host app expose through `UITextDocumentProxy`. It uses this context for local editing, indentation, completions, cursor movement, and optional spelling correction. The host can limit or withhold context. TabForge does not build a keystroke history or save the host document.
 
-The optional swipe recognizer uses an included coding vocabulary. Gesture traces and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
+The optional swipe recognizer uses included English and programming vocabularies. The English dictionary is a fixed, bundled resource; the keyboard does not download words or learn from typing. Gesture traces and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
 
 Optional English prose correction uses Apple's `UITextChecker` on the device. When enabled, the extension can request Apple's supplementary keyboard lexicon, which may include names and text-shortcut entries. TabForge keeps a bounded set in memory to avoid correcting those words; it does not save or log that lexicon. Spelling resources, correction state, swipe traces, repeat tasks, and held-key state are released when the keyboard is dismissed or receives a memory warning. Ordinary operating-system memory management still applies; this is not a secure-memory-erasure guarantee.
 

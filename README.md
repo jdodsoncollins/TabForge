@@ -4,6 +4,10 @@ An MIT-licensed iOS keyboard for programming, scripting, terminals and remote de
 
 [Source](https://github.com/jdodsoncollins/TabForge) · [Support](docs/SUPPORT.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md)
 
+![TabForge overview showing Tab and Outdent, brackets, shortcuts, and Delete line on iPhone, iPhone Duo, and iPad, including Duo opening into laptop mode](docs/images/tabforge-overview.gif)
+
+[Watch the 15-second video](https://www.jeremycollins.net/tabforge#overview). Native Simulator footage with synthetic code.
+
 Support: [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). Use [private security reporting](SECURITY.md) for vulnerabilities, and synthetic examples for public bug reports.
 
 ## Privacy and transparency

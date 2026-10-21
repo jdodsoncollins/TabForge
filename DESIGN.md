@@ -21,7 +21,7 @@ The companion app and extension are separate processes with separate storage. Th
 
 The companion keyboard and layout guide are explicitly previews. Their independent settings and snippets live only in memory for the current app process, so preview changes cannot configure the installed extension or persist as companion keyboard preferences. The playground draft is separate and remains saved locally.
 
-Version 1.0.1 (15) presents the optional Tip Jar through the initiating SwiftUI view's scene-aware Apple purchase action. It is VALID, available to the existing internal TestFlight group and selected in the unsubmitted App Store draft, superseding build 14. The live version 1.0 (12) has no tips. StoreKit remains in the companion app, with no TabForge backend, access to extension records or new keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
+Version 1.0.1 (15) presents the optional Tip Jar through the initiating SwiftUI view's scene-aware Apple purchase action. The version and five tips were submitted on October 21, 2026; the version and review submission are WAITING_FOR_REVIEW, with release after approval configured. Build 15 remains VALID and available to the existing internal TestFlight group. The live version 1.0 (12) has no tips. StoreKit remains in the companion app, with no TabForge backend, access to extension records or new keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
 
 ## Text editing
 
@@ -79,7 +79,7 @@ The companion initializes its preview store without a persistent defaults backen
 
 iOS Standard follows system light/dark by default. Code palettes are explicit alternatives. Keep palette definitions centralized in `KeyboardPalette`, use semantic colors where appropriate, and preserve legibility across appearance, Bold Text, and increased-contrast settings.
 
-## Optional tips (version 1.0.1 candidate)
+## Optional tips (version 1.0.1)
 
 The companion's Tip Jar offers five repeatable consumable purchases. Tips unlock no features, add no subscription, and do not affect keyboard behavior. Show a purchasable price only after StoreKit returns the matching product, using `Product.displayPrice` for its storefront and currency. Loading, missing products, disabled purchases, cancellation, pending approval, verification failure, and purchase failure must leave the rest of the app usable.
 

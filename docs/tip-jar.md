@@ -1,6 +1,6 @@
 # Companion Tip Jar
 
-Version 1.0.1 (15) uses SwiftUI's scene-aware purchase action and is VALID, available to the existing internal TestFlight group and selected in the unsubmitted App Store draft, superseding build 14. It passed 22 focused checks across Duo, phone and iPad, plus all 24 archive/export checks. The live version 1.0 (12) has no Tip Jar. All five consumable drafts have the exact US base prices below, en-US metadata, review screenshots and matching territory availability; they are not submitted or approved. Local purchases do not establish a completed remote sandbox purchase or approval.
+Version 1.0.1 (15) and all five consumable tips were submitted on October 21, 2026. The version, parent review and each tip are WAITING_FOR_REVIEW; release after approval is configured. Build 15 uses SwiftUI's scene-aware purchase action, is VALID and remains available to the existing internal TestFlight group. It passed 22 focused checks across Duo, phone and iPad, plus all 24 archive/export checks. The live version 1.0 (12) has no Tip Jar. The submitted tips have the exact US base prices below, en-US metadata, review screenshots and matching territory availability. Submission and local tests do not establish approval or a completed physical TestFlight sandbox purchase.
 
 ## Products and presentation
 
@@ -28,7 +28,7 @@ An app-scoped listener processes [`Transaction.updates`](https://developer.apple
 
 Apple handles account, payment, and purchase information under [App Store & Privacy](https://www.apple.com/legal/privacy/data/en/app-store/). TabForge adds no purchase backend, third-party payment SDK, analytics, account linkage, or transaction upload. The app receives transaction results locally; payment handling by Apple is not a claim that no transaction data exists.
 
-The release review supports retaining **Data Not Collected** for this implementation. Apple's [App Privacy guidance](https://developer.apple.com/app-store/app-privacy-details/) excludes inaccessible payment details entered outside the app and on-device-only processing. It requires disclosure of data a developer collects through Apple services. This app keeps only bounded transaction identifiers in memory and has no transaction upload, server, analytics or saved purchase history. The [matching policy draft](../release-prep/copy/privacy-policy-en-US.md) must be published before the App Store update is released. See [PRIVACY.md](../PRIVACY.md) for the exact boundary; a future data-flow change needs another review.
+The release review supports retaining **Data Not Collected**, and the public label was freshly verified. Apple's [App Privacy guidance](https://developer.apple.com/app-store/app-privacy-details/) excludes inaccessible payment details entered outside the app and on-device-only processing. It requires disclosure of data a developer collects through Apple services. This app keeps only bounded transaction identifiers in memory and has no transaction upload, server, analytics or saved purchase history. The matching October 21 [website policy](https://www.jeremycollins.net/tabforge/privacy) is published and freshly verified live; its reviewed text is retained in [release copy](../release-prep/copy/privacy-policy-en-US.md). See [PRIVACY.md](../PRIVACY.md) for the exact boundary; a future data-flow change needs another review.
 
 ## Reproduce local tests
 
@@ -59,7 +59,7 @@ In Xcode, run **ScriptKeyboard-Tips**, open Settings → Tip Jar, and use the St
 
 Automated model tests and local StoreKit scenarios are separate from sandbox and physical-device checks. Record the exact tests run and failures observed; this guide is not evidence that these checks passed.
 
-### Candidate evidence and remaining checks
+### Submission evidence and remaining checks
 
 On October 21, all 88 core tests across ten suites and all five build-configuration checks passed; the later companion changes do not change their source. Before the build 15 purchase change, phone and iPad passed the 15 mock-store methods, native StoreKit lifecycle checks and complete Tip Jar UI runs, including full-screen navigation and landscape checks. Build 14's final normal/largest-text Other Apps phone checks passed after the canonical URL change, with all three cards reachable and at least 44 points in each dimension; their captures were reviewed.
 
@@ -67,7 +67,7 @@ Duo's build 15 source checks supersede the earlier local checkout failure: the i
 
 An artificial cancellation-error injection produced an unmappable Apple test-server error and was replaced by the actual checkout-close test. Native lifecycle scenarios share one local test session to avoid resetting synthetic transaction IDs while the app-scoped listener is active. The initial fresh iPad run revealed inactive local StoreKit configuration in the normal scheme; purchase integration suites now require the separate Tips scheme.
 
-Build 15's signed archive/export passed all 24 artifact checks, preserving canonical URLs, companion-only Paper & Grain artwork and the absence of Full Access, signed App Group entitlements, test configuration and private files. Its VALID processing, access for the existing internal TestFlight group, exact testing notes and clean strict TestFlight validation are verified. Direct readback confirms build 15 selected in version 1.0.1's six-item READY_FOR_REVIEW draft for the app and five first consumables. The draft remains unsubmitted. Build 14's receipts are historical. See [release readiness](../release-prep/readiness.md) for the remaining website, agreement and sandbox checks.
+Build 15's signed archive/export passed all 24 artifact checks, preserving canonical URLs, companion-only Paper & Grain artwork and the absence of Full Access, signed App Group entitlements, test configuration and private files. Its VALID processing, existing internal TestFlight access, exact testing notes and clean strict TestFlight validation are verified. The six-item submission succeeded with zero blockers; version 1.0.1, its parent review and all five tips read WAITING_FOR_REVIEW. Post-submission purchase validation has no errors, warnings, informational results or blockers. The canonical product/privacy pages and Data Not Collected label are published and verified. Build 14's receipts are historical. See [release readiness](../release-prep/readiness.md) for the remaining physical-device checks.
 
 ## Configure a distribution's App Store catalog
 
@@ -77,4 +77,4 @@ Build 15's signed archive/export passed all 24 artifact checks, preserving canon
 4. Test a signed build against the real sandbox catalog with the local StoreKit configuration disabled. Confirm all five products load, transaction handling works, and purchase restrictions, cancellation, pending approval, and retry behave correctly. TestFlight uses a test purchase environment; verify the system sheet rather than making a production payment during development.
 5. Review the live privacy policy, App Privacy answers, release notes, and reviewer instructions. Apple's [submission guide](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/) requires the first consumable purchases to accompany a new app version in the same review submission. Do not modify an already distributed build or claim that this source candidate is approved.
 
-Remote drafts are prepared for the maintainer’s app, while a fork needs its own catalog. Version 1.0.1 is staged as an App Store draft, but neither that version nor the purchase products have been submitted for review. Confirm each remaining release step separately.
+The maintainer's version 1.0.1 and five tips are submitted and awaiting review. A fork needs its own catalog and submission; this result does not confer approval on either distribution.

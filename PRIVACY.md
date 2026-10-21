@@ -6,7 +6,7 @@ TabForge's app and keyboard contain no analytics, advertising, account system, o
 
 This document describes TabForge's implementation. It does not describe the data practices of the app you type into, your terminal or remote-desktop service, Apple system features, GitHub, or your device backup provider.
 
-The Tip Jar section below describes version 1.0.1 (15), available to the existing internal TestFlight group and selected in the unsubmitted App Store draft. It supersedes build 14 and changes Apple's purchase presentation context without changing these data boundaries. The live version 1.0 (12) has no purchases. The matching website policy update is prepared in [release copy](release-prep/copy/privacy-policy-en-US.md) and must be published before the App Store update is released.
+The Tip Jar section below describes version 1.0.1 (15), submitted with all five tips on October 21, 2026. The version and review submission are WAITING_FOR_REVIEW, with release after approval configured; build 15 remains available to the existing internal TestFlight group. The live version 1.0 (12) has no purchases. The matching October 21 [website policy](https://www.jeremycollins.net/tabforge/privacy) is published and was verified live, alongside the [product page](https://www.jeremycollins.net/tabforge). The App Store's published Data Not Collected label was freshly verified. The [release copy](release-prep/copy/privacy-policy-en-US.md) preserves the reviewed policy text.
 
 ## What stays in memory
 
@@ -48,7 +48,7 @@ The companion playground's **Voice to code** feature starts only after a user ac
 
 System Dictation and Writing Tools are controlled by Apple and the user's system settings. Their data handling is outside TabForge's on-device voice implementation. Review Apple's disclosures before invoking those features with sensitive material.
 
-## Optional tips through Apple (version 1.0.1 candidate)
+## Optional tips through Apple (version 1.0.1)
 
 The companion app's Tip Jar uses Apple's StoreKit service to load products and process an optional, one-time tip. These operations use Apple's network, account, and payment infrastructure. Tips do not unlock features or start a subscription. The keyboard extension contains no purchase flow, requests no Full Access, and does not share its records with the companion app.
 

@@ -3,6 +3,7 @@ import KeyboardCore
 
 struct SettingsView: View {
     private static let repositoryURL = URL(string: "https://github.com/jdodsoncollins/TabForge")!
+    private static let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var showSetup = false
@@ -44,7 +45,7 @@ struct SettingsView: View {
                 }
                 .accessibilityIdentifier("settings.sourceCode")
                 .accessibilityHint("Opens TabForge’s public source repository.")
-                Link(destination: URL(string: "https://www.jeremycollins.net/tabforge-privacy-policy")!) {
+                Link(destination: URL(string: "https://www.jeremycollins.net/tabforge/privacy")!) {
                     Label("Privacy details", systemImage: "hand.raised")
                 }
                 .accessibilityIdentifier("settings.privacyPolicy")
@@ -56,11 +57,19 @@ struct SettingsView: View {
                 Text("TabForge is open source under the MIT License. Inspect how the keyboard handles your text, review its privacy protections, and contribute improvements.")
             }
             Section {
-                LabeledContent("Version", value: "1.0")
+                LabeledContent("Version", value: Self.appVersion)
                 LabeledContent("Requires", value: "iOS / iPadOS 27.0")
                 Text("The keyboard extension does not log or transmit keystrokes. TabForge saves your playground draft, preferences, and snippets locally. Apps you type into and Apple’s system services follow their own privacy policies.")
                     .font(.footnote).foregroundStyle(.secondary)
             } header: { Text("About TabForge") }
+            Section {
+                NavigationLink { TipJarView() } label: {
+                    DescribedSettingsRow(
+                        title: "Tip Jar", detail: "Support TabForge’s development.", symbol: "gift"
+                    )
+                }
+                .accessibilityIdentifier("settings.tipJar")
+            }
             Section("Built with") {
                 AttributionLink(
                     title: "SwiftUI", detail: "The native interface for TabForge’s companion app.",
@@ -88,8 +97,8 @@ struct SettingsView: View {
             }
             Section {
                 AttributionLink(
-                    title: "Created by Jeremy Collins", detail: "jeremycollins.net",
-                    symbol: "person.crop.circle", destination: URL(string: "https://www.jeremycollins.net")!
+                    title: "Created by Jeremy Collins", detail: "jeremycollins.net/tabforge",
+                    symbol: "person.crop.circle", destination: URL(string: "https://www.jeremycollins.net/tabforge")!
                 )
                 .accessibilityIdentifier("settings.creator")
                 NavigationLink { OtherAppsView() } label: {
@@ -168,6 +177,12 @@ private struct OtherAppsView: View {
                     destination: URL(string: "https://apps.apple.com/us/app/taktung-deployment-status/id6805738660")!
                 )
                 .accessibilityIdentifier("otherApps.taktung")
+                appLink(
+                    name: "Paper & Grain", icon: "PaperGrainMark",
+                    detail: "Fold paper, follow origami lessons, and experiment with shapes in Free Fold.",
+                    destination: URL(string: "https://apps.apple.com/us/app/paper-grain/id6821361967")!
+                )
+                .accessibilityIdentifier("otherApps.paperGrain")
             } footer: {
                 Text("These links open the App Store.")
             }

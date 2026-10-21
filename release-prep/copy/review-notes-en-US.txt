@@ -1,25 +1,26 @@
-TabForge includes a keyboard extension and a companion playground with setup help, source/privacy links and on-device voice input. No account, purchase or demo credentials are required.
+TabForge includes a keyboard extension and a companion playground with setup help, source/privacy links and on-device voice input. All features work without a TabForge account or purchase. No demo credentials are required.
+
+Version 1.0.1 adds Settings > Tip Jar in the companion app. Its five optional, repeatable consumable purchases are tip.kind, tip.thoughtful, tip.wonderful, tip.incredible and tip.extraordinary, with US base prices of $0.99, $1.99, $2.99, $3.99 and $4.99. Apple supplies localized prices and purchase confirmation. Tips unlock no features and create no subscription or entitlement. The app remains usable if purchases are restricted, unavailable, cancelled, pending or unsuccessful. There is no entitlement to restore. Please review these first consumables with this app version.
 
 Keyboard setup:
-1. Open TabForge. The Playground works immediately using TabForge's in-app keyboard.
+1. Open TabForge. The Playground works immediately with its in-app keyboard.
 2. To test the extension, open iOS Settings > General > Keyboard > Keyboards > Add New Keyboard and choose TabForge.
-3. In an app that permits third-party keyboards, hold the globe key and select TabForge. The globe also provides a method to advance to another keyboard.
-4. This version does not request Full Access or configure an App Group. Use the keyboard's gear menu to configure its layout and behavior and manage custom snippets. These records are saved only in the keyboard extension's local preferences; the companion app does not configure or synchronize them. TabForge has no application networking service and no typed-text logging.
-5. The extension does not launch the companion app. Open TabForge for setup, source/privacy information, credits and licenses.
-6. The companion keyboard and layout guide are labelled previews. Their settings and snippets stay in memory and do not change the installed keyboard. The companion has no installed-keyboard controls. Its playground draft is saved locally.
+3. In a compatible app, hold the globe key and select TabForge. The globe also switches to another keyboard.
+4. Full Access and App Groups are not requested. Configure the installed keyboard and manage snippets from its gear menu. It saves them in its own local preferences; the companion does not configure or synchronize them. The extension does not launch the companion app.
+5. Companion keyboard/layout guides are labelled previews. Their settings and snippets stay in memory. The playground draft is saved separately on the device.
 
 Input profiles:
-- Code editor enables eligible pairing, indentation and local text editing. Destructive line actions decline if the host does not expose enough context to verify them.
-- Terminal · ANSI inserts literal tabs, ASCII Control characters and configured ANSI navigation sequences. Use only a client that forwards and interprets these values. It does not synthesize hardware keyboard events.
-- Remote desktop sends literal text with smart transformations disabled. The remote client decides how the text reaches the remote computer. Unsupported key combinations are declined.
+- Code editor supports eligible pairing, indentation and local edits. Destructive line actions decline if host context is insufficient to verify them.
+- Terminal · ANSI inserts tabs, ASCII Control characters and configured ANSI navigation sequences. It needs a client that forwards them; it cannot synthesize hardware-key events.
+- Remote desktop inserts literal text with smart transformations disabled. The client controls forwarding. Unsupported combinations are declined.
 
-Optional smart input:
-- English prose autocorrect defaults off. Turn on Autocorrect prose (English) in the keyboard's gear menu. It uses Apple's public UITextChecker, respects eligible field traits and host opt-outs, skips code-like text, and remains inactive in Terminal, Remote desktop and the companion code playground. Space applies a conservative correction; immediate Delete restores the original spelling.
-- Swipe code words is experimental and defaults off. It uses bundled English and code words offline, with alternatives in the gear menu. Gestures and alternatives are discarded when the document or layout changes. It is not Apple QuickPath.
-- Voice to code is in the companion app's Playground toolbar. Tap the microphone, then Start recording. Microphone and Speech permissions are requested for this user-initiated feature. Recognition requires on-device English support and has no cloud fallback. Review the transcript and code preview before Insert. Cancellation, dismissal, backgrounding and audio interruption stop recording. Permission denial or unavailable recognition does not block keyboard use.
+Optional input:
+- Autocorrect prose (English) defaults off. Enable it in the keyboard gear menu. Apple's public UITextChecker respects eligible field traits and host opt-outs, skips code-like text and stays inactive in Terminal, Remote desktop and the code playground. Space applies a correction; immediate Delete restores the spelling.
+- Swipe code words is experimental and defaults off. It uses bundled English/code words offline, with alternatives in the gear menu. Document/layout changes discard traces and alternatives. It is not Apple QuickPath.
+- Voice to code is in the Playground toolbar. Tap the microphone, then Start recording. This user action requests microphone and Speech permission. Recognition requires on-device English support without a cloud fallback. Review the transcript before Insert. Dismissal, cancellation, backgrounding or audio interruption stops recording. Unavailable recognition does not block typing.
 
-Privacy and storage:
-The extension does not persist host text, gesture traces, speech audio or supplementary lexicon entries. Keyboard preferences and user-created snippets are saved in the extension's local UserDefaults. The companion playground draft is saved separately in the app's UserDefaults. A transcript becomes part of the saved draft only after the user inserts it. Existing keyboard-local preferences are retained; earlier shared or companion-only keyboard records are not imported or erased. The app has no accounts, analytics, advertising or remote input service. Public source, privacy details, security policy, and offline licenses remain available in the companion app.
+Privacy:
+The extension does not save host text, swipe traces, speech audio or supplementary lexicon entries. The companion saves its playground draft separately; an inserted transcript becomes part of that draft. Existing keyboard-local records are retained; older shared/companion records are not imported or erased. StoreKit stays in the companion. It processes transaction results locally without a purchase backend, transaction upload, logs, receipts or app-maintained purchase history. Apple handles payment and its own transaction records. TabForge has no accounts, analytics, advertising or remote input service. Source, privacy, security and offline license notices are linked in the app.
 
 Compatibility:
-Requires iOS/iPadOS 27.0+. Duo-specific geometry is guarded for 27.1. The system substitutes Apple's keyboard in secure and phone fields. Third-party apps may decline keyboard extensions or limit document context. The playground edits text; it does not compile or execute code.
+iOS/iPadOS 27.0+; Duo geometry requires 27.1. iOS uses the system keyboard in secure and phone fields. Hosts may reject extensions or limit context. The playground edits text; it does not compile or run code.

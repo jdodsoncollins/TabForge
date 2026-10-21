@@ -1,0 +1,16 @@
+TabForge 1.0.1 (13): optional Tip Jar
+
+Open the companion app, then Settings > Tip Jar. Five optional one-time tips support development. They unlock no features and do not start a subscription. All app and keyboard features remain free to use.
+
+TestFlight purchases use Apple's test environment and do not charge you. Before confirming, check that the system purchase sheet identifies the test environment. No production payment is needed for testing.
+
+Please try:
+- Load all five localized prices, leave the screen and return, then try the same tip more than once.
+- Close Apple's confirmation without purchasing. The app should stay usable and allow another attempt.
+- Check the menu with large text, light/dark appearance, phone portrait/landscape, iPad and supported Duo layouts.
+- If purchases are restricted or a product cannot load, the menu should explain the problem without affecting the keyboard.
+- Continue ordinary typing, snippets and optional swipe input. The Tip Jar should not change keyboard behavior or permissions.
+
+Apple handles payment and transaction records. TabForge has no purchase backend and does not save a receipt, purchase history or tip total. The keyboard still does not request Full Access or share its local settings with the companion app.
+
+Use synthetic examples in feedback. Local StoreKit and simulator checks do not establish sandbox availability, physical-device behavior or App Review approval.

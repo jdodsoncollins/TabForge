@@ -1,0 +1,16 @@
+TabForge 1.0.1 (14): Tip Jar and Other Apps
+
+Open Settings > Tip Jar in the companion app to try five optional one-time tips. Tips unlock no features or subscription; all app and keyboard features remain free.
+
+TestFlight purchases use Apple's test environment and do not charge you. Check that the system confirmation identifies the test environment before continuing. No production payment is needed for testing.
+
+Please try:
+- Load the five localized prices, repeat a tip and close Apple's confirmation without purchasing. The menu should remain usable.
+- Check unavailable products, restricted purchases or an interrupted load if you can reproduce them. These conditions should not affect the keyboard.
+- Open Settings > Other Apps. Codable, Taktung and Paper & Grain should each have a readable description and reachable App Store link. Check all three at the largest accessibility text size.
+- Check Tip Jar and Other Apps in phone portrait and landscape, iPad and supported Duo layouts, with light and dark appearance.
+- Continue typing, snippets and optional swipe input. This update should not change keyboard permissions or behavior.
+
+Apple handles payment and transaction records. TabForge has no purchase backend or saved receipt, purchase history or tip total. The keyboard still does not request Full Access or share its local settings with the companion app.
+
+Use synthetic examples in feedback. Simulator and local StoreKit results do not establish real sandbox availability, physical-device behavior or App Review approval.

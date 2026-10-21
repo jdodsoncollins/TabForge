@@ -63,6 +63,11 @@
                BlueprintName = "ScriptKeyboardTests"
                ReferencedContainer = "container:ScriptKeyboard.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "TipStoreKitTests">
+               </Test>
+            </SkippedTests>
          </TestableReference>
          <TestableReference
             skipped = "NO"
@@ -74,6 +79,11 @@
                BlueprintName = "ScriptKeyboardUITests"
                ReferencedContainer = "container:ScriptKeyboard.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "TipJarUITests">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
       <CommandLineArguments>

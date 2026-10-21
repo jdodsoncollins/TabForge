@@ -24,6 +24,9 @@ Voice to code lets you dictate, review spoken punctuation and insert the result.
 
 Optional swipe typing uses a bundled English dictionary and programming words, with alternatives in the gear menu. It works offline, is off by default and remains experimental. Tap typing works better for some identifiers.
 
+Optional support
+TabForge is free. If you would like to support its development, the companion app's Tip Jar offers optional one-time purchases through Apple. Tips unlock no features and are not subscriptions.
+
 Open source and privacy
 TabForge is MIT licensed, with source and privacy details linked in the companion app. The keyboard does not log or transmit keystrokes. There are no ads, analytics or accounts.
 

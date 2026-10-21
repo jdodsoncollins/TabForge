@@ -21,6 +21,8 @@ The companion app and extension are separate processes with separate storage. Th
 
 The companion keyboard and layout guide are explicitly previews. Their independent settings and snippets live only in memory for the current app process, so preview changes cannot configure the installed extension or persist as companion keyboard preferences. The playground draft is separate and remains saved locally.
 
+The optional Tip Jar is in version 1.0.1 (14), available to internal TestFlight testers and selected in an unsubmitted App Store draft; the live version 1.0 (12) does not contain it. Its purchase flow uses Apple's StoreKit service and has no TabForge backend. It has no access to the extension's local records and adds no keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
+
 ## Text editing
 
 `TextDocument` is main-actor isolated. UIKit selection and movement offsets use UTF-16; bounded nearby-context methods count Swift extended grapheme clusters. Preserve that distinction when handling emoji or combining marks.
@@ -76,6 +78,12 @@ The companion app bundles the repository's `LICENSE` and `THIRD_PARTY_NOTICES.md
 The companion initializes its preview store without a persistent defaults backend. Do not replace that memory-only store with app `UserDefaults`, a named suite, or a shared container. Its draft persistence is the existing separate `playground.draft` entry.
 
 iOS Standard follows system light/dark by default. Code palettes are explicit alternatives. Keep palette definitions centralized in `KeyboardPalette`, use semantic colors where appropriate, and preserve legibility across appearance, Bold Text, and increased-contrast settings.
+
+## Optional tips (version 1.0.1 candidate)
+
+The companion's Tip Jar offers five repeatable consumable purchases. Tips unlock no features, add no subscription, and do not affect keyboard behavior. Show a purchasable price only after StoreKit returns the matching product, using `Product.displayPrice` for its storefront and currency. Loading, missing products, disabled purchases, cancellation, pending approval, verification failure, and purchase failure must leave the rest of the app usable.
+
+An app-scoped transaction listener handles verified matching tip transactions, including completions delivered after the purchase screen closes. Finish a verified tip after the app completes its acknowledgement; do not treat an unverified transaction as success or finish unrelated products. The app keeps no separate receipt, purchase history, or tip total in its preferences. StoreKit and the App Store maintain their own transaction records. There is no durable entitlement to restore for these consumable tips.
 
 ## Accessibility
 

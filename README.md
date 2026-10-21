@@ -2,13 +2,13 @@
 
 An MIT-licensed iOS keyboard for programming, scripting, terminals and remote desktops. Native UIKit input, a SwiftUI companion app, and an inspectable local editing engine.
 
-[Source](https://github.com/jdodsoncollins/TabForge) · [Support](docs/SUPPORT.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://www.jeremycollins.net/tabforge) · [Source](https://github.com/jdodsoncollins/TabForge) · [Support](docs/SUPPORT.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md)
 
 Support: [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). Use [private security reporting](SECURITY.md) for vulnerabilities, and synthetic examples for public bug reports.
 
 ## Privacy and transparency
 
-A keyboard handles sensitive text. TabForge contains no application networking client, analytics, advertising, account service or automatic diagnostic uploader. The extension does not record a keystroke history or transmit typing. It does not request Full Access or use an App Group.
+A keyboard handles sensitive text. TabForge has no backend, analytics, advertising, account service or automatic diagnostic uploader. The optional companion Tip Jar uses Apple’s StoreKit service for purchases. The extension does not record a keystroke history or transmit typing. It does not request Full Access or use an App Group.
 
 The keyboard saves its preferences and custom snippets in its own local container. Manage them from the keyboard's gear menu. The companion app **does save its playground draft locally** and does not synchronize keyboard settings or snippets. Voice input requires on-device recognition; it has no cloud fallback. User-triggered sharing, host apps, Apple system features and device backups have their own data handling. Read [PRIVACY.md](PRIVACY.md) for the complete boundaries, migration limits, and storage details.
 
@@ -16,9 +16,9 @@ The companion keyboard and layout guide are previews. Their settings and snippet
 
 The app's Settings screen links directly to this repository, its privacy documentation and its security policy. Licenses & notices displays the bundled MIT license and third-party notices offline. Public source makes review possible; it is not a claim of an independent security audit or proof that a distributed binary matches a particular commit.
 
-The bottom of Settings includes framework and palette credits, creator details, and an Other Apps page for Codable and Taktung. Their icons are bundled; external pages open only when selected.
+The bottom of Settings includes framework and palette credits, creator details, and an Other Apps page for Codable, Taktung and Paper & Grain. Their icons are bundled; external pages open only when selected.
 
-The App Store [privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) and [repository privacy documentation](PRIVACY.md) describe the same keyboard-local storage, temporary previews, and absence of Full Access or App Group sharing.
+The App Store [privacy policy](https://www.jeremycollins.net/tabforge/privacy) describes the live version 1.0 (12). The [repository privacy documentation](PRIVACY.md) also explains the Apple-operated purchase flow prepared for version 1.0.1. Keyboard settings remain local, companion previews stay temporary, and neither build requests Full Access or App Group sharing. The website still describes the live build as having no in-app purchases. That statement and the matching policy must be updated before the Tip Jar version is released; the release privacy review supports retaining Data Not Collected for the current implementation.
 
 ## See the keyboard
 
@@ -46,6 +46,12 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 - Opt-in experimental swipe recognition over a bundled English and programming vocabulary, and companion voice-to-code with transcript review.
 - Native playground selection, undo, syntax highlighting, line numbers and system Writing Tools where supported.
 - Keyboard accessibility labels/state, overlapping key handling, Bold Text and Dynamic Type in settings. Physical assistive-technology and touch coverage has limits documented below.
+
+## Optional Tip Jar (version 1.0.1 candidate)
+
+The companion app has a Tip Jar candidate with **Kind, Thoughtful, Wonderful, Incredible, and Extraordinary Tips** at US base prices of **$0.99, $1.99, $2.99, $3.99, and $4.99**. Actual prices come from StoreKit in the customer's storefront currency. Tips are voluntary, repeatable consumable purchases; they unlock no features and are not subscriptions. The app and keyboard remain free to use.
+
+The live version 1.0 (12) does not include tips. Version 1.0.1 (14) is VALID and available to the existing internal TestFlight group. Readback confirms build 14 is selected in the unsubmitted App Store draft. It also adds Paper & Grain beside Codable and Taktung in Other Apps. All 24 archive/export artifact checks and the final normal/largest-text Other Apps UI checks passed. Local StoreKit results do not establish sandbox availability or approval of the five products. See [setup, privacy boundaries, and test instructions](docs/tip-jar.md).
 
 ## Build and enable
 

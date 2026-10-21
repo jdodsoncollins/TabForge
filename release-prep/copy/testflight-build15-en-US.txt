@@ -1,0 +1,14 @@
+TabForge 1.0.1 (15): Tip Jar checkout
+
+Apple's purchase confirmation now uses the Tip Jar's current window. This addresses the missing local confirmation observed on Duo. All app and keyboard features remain free.
+
+Purchases made in a build installed from TestFlight use Apple's sandbox and do not charge you. The confirmation should identify the test environment. Use the five actual tip products; no placeholder product or simulated-success switch is needed.
+
+Please try:
+- Open Settings > Tip Jar and check all five localized prices.
+- Complete a test tip and check the thank-you message. Give the same tip again to check that consumable purchases remain repeatable.
+- Close Apple's confirmation without buying. The menu should become usable again, without a thank-you message.
+- Check phone, iPad and Duo, including changes in orientation or window size before opening checkout.
+- Check Other Apps for Codable, Taktung and Paper & Grain.
+
+Local StoreKit and simulator checks are separate from this TestFlight sandbox test. Use synthetic examples in feedback. The keyboard still does not request Full Access or share its local settings with the companion app. Apple handles payment and transaction records; TabForge has no purchase backend or saved receipt, purchase history or tip total.

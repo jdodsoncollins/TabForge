@@ -6,7 +6,7 @@ TabForge's app and keyboard contain no analytics, advertising, account system, o
 
 This document describes TabForge's implementation. It does not describe the data practices of the app you type into, your terminal or remote-desktop service, Apple system features, GitHub, or your device backup provider.
 
-The Tip Jar section below describes version 1.0.1 (14), available to the existing internal TestFlight group and selected in an App Store draft. It has not been submitted for App Review. The live version 1.0 (12) has no purchases. The matching website policy update is prepared in [release copy](release-prep/copy/privacy-policy-en-US.md) and must be published before the App Store update is released.
+The Tip Jar section below describes version 1.0.1 (15), available to the existing internal TestFlight group and selected in the unsubmitted App Store draft. It supersedes build 14 and changes Apple's purchase presentation context without changing these data boundaries. The live version 1.0 (12) has no purchases. The matching website policy update is prepared in [release copy](release-prep/copy/privacy-policy-en-US.md) and must be published before the App Store update is released.
 
 ## What stays in memory
 

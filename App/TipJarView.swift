@@ -1,7 +1,9 @@
 import SwiftUI
+import StoreKit
 
 struct TipJarView: View {
     @Environment(TipStore.self) private var store
+    @Environment(\.purchase) private var purchase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -64,7 +66,12 @@ struct TipJarView: View {
         let product = store.productsByID[option.id]
         let available = product != nil && store.canMakePayments
         return Button {
-            Task { await store.purchase(option) }
+            let purchase = purchase
+            Task {
+                await store.purchase(option, using: { product in
+                    try await purchase(product)
+                })
+            }
         } label: {
             let layout = dynamicTypeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))

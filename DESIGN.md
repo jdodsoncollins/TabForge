@@ -21,7 +21,7 @@ The companion app and extension are separate processes with separate storage. Th
 
 The companion keyboard and layout guide are explicitly previews. Their independent settings and snippets live only in memory for the current app process, so preview changes cannot configure the installed extension or persist as companion keyboard preferences. The playground draft is separate and remains saved locally.
 
-The optional Tip Jar is in version 1.0.1 (14), available to internal TestFlight testers and selected in an unsubmitted App Store draft; the live version 1.0 (12) does not contain it. Its purchase flow uses Apple's StoreKit service and has no TabForge backend. It has no access to the extension's local records and adds no keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
+Version 1.0.1 (15) presents the optional Tip Jar through the initiating SwiftUI view's scene-aware Apple purchase action. It is VALID, available to the existing internal TestFlight group and selected in the unsubmitted App Store draft, superseding build 14. The live version 1.0 (12) has no tips. StoreKit remains in the companion app, with no TabForge backend, access to extension records or new keyboard permissions. See [Tip Jar implementation and release checks](docs/tip-jar.md).
 
 ## Text editing
 

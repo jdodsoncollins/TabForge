@@ -51,7 +51,7 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 
 The companion app has a Tip Jar candidate with **Kind, Thoughtful, Wonderful, Incredible, and Extraordinary Tips** at US base prices of **$0.99, $1.99, $2.99, $3.99, and $4.99**. Actual prices come from StoreKit in the customer's storefront currency. Tips are voluntary, repeatable consumable purchases; they unlock no features and are not subscriptions. The app and keyboard remain free to use.
 
-The live version 1.0 (12) does not include tips. Version 1.0.1 (14) is VALID and available to the existing internal TestFlight group. Readback confirms build 14 is selected in the unsubmitted App Store draft. It also adds Paper & Grain beside Codable and Taktung in Other Apps. All 24 archive/export artifact checks and the final normal/largest-text Other Apps UI checks passed. Local StoreKit results do not establish sandbox availability or approval of the five products. See [setup, privacy boundaries, and test instructions](docs/tip-jar.md).
+The live version 1.0 (12) does not include tips. Version 1.0.1 (15) is VALID, available to the existing internal TestFlight group and selected in the unsubmitted App Store draft, superseding build 14. It adds the Tip Jar, scene-aware Apple purchase presentation, and Paper & Grain beside Codable and Taktung in Other Apps. All 22 focused checks across Duo, phone and iPad and all 24 archive/export checks passed. Local StoreKit results do not establish a completed TestFlight sandbox purchase or product approval. See [setup, privacy boundaries, and test instructions](docs/tip-jar.md).
 
 ## Build and enable
 

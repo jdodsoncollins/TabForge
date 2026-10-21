@@ -69,6 +69,7 @@ final class TipJarUITests: XCTestCase {
             cancel = system.buttons["dismiss"].firstMatch
         }
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        attach(app, name: "Tip-jar-native-confirmation")
         cancel.tap()
         XCTAssertTrue(first.waitForExistence(timeout: 5))
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: first)

@@ -35,7 +35,7 @@ struct TipStoreTests {
             return offeredProducts
         }
 
-        func purchase(productID: String) async throws -> TipPurchaseResult {
+        func purchase(productID: String, using action: TipPurchaseAction?) async throws -> TipPurchaseResult {
             purchaseRequests.append(productID)
             await onPurchase?()
             if cancelPurchaseTask { throw CancellationError() }

@@ -52,11 +52,14 @@ enum TipPurchaseResult: Sendable {
     case pending
 }
 
+/// The initiating view supplies StoreKit's purchase action with its own scene context.
+typealias TipPurchaseAction = @MainActor (Product) async throws -> Product.PurchaseResult
+
 @MainActor
 protocol TipStorefront {
     var canMakePayments: Bool { get }
     func products(for identifiers: [String]) async throws -> [TipProduct]
-    func purchase(productID: String) async throws -> TipPurchaseResult
+    func purchase(productID: String, using action: TipPurchaseAction?) async throws -> TipPurchaseResult
     func transactionUpdates() -> AsyncStream<TipTransactionResult>
 }
 
@@ -112,7 +115,7 @@ final class TipStore {
         }
     }
 
-    func purchase(_ option: TipOption) async {
+    func purchase(_ option: TipOption, using action: TipPurchaseAction? = nil) async {
         // The guard is set before the first suspension, including across different tip rows.
         guard purchasingID == nil, Self.catalog.contains(option) else { return }
         canMakePayments = storefront.canMakePayments
@@ -128,7 +131,7 @@ final class TipStore {
         notice = nil
         defer { purchasingID = nil }
         do {
-            switch try await storefront.purchase(productID: option.id) {
+            switch try await storefront.purchase(productID: option.id, using: action) {
             case .cancelled:
                 break
             case .pending:
@@ -209,12 +212,19 @@ private final class AppleTipStorefront: TipStorefront {
         return products.map { TipProduct(id: $0.id, displayPrice: $0.displayPrice, isConsumable: $0.type == .consumable) }
     }
 
-    func purchase(productID: String) async throws -> TipPurchaseResult {
+    func purchase(productID: String, using action: TipPurchaseAction?) async throws -> TipPurchaseResult {
         guard let product = productsByID[productID], product.type == .consumable else {
             throw Product.PurchaseError.productUnavailable
         }
         do {
-            switch try await product.purchase() {
+            let result: Product.PurchaseResult
+            if let action {
+                result = try await action(product)
+            } else {
+                // Local non-UI StoreKit integration tests have no presenting view.
+                result = try await product.purchase()
+            }
+            switch result {
             case .success(let result): return .transaction(Self.map(result))
             case .userCancelled: return .cancelled
             case .pending: return .pending

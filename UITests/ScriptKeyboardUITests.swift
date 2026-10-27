@@ -19,6 +19,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         let outside = q.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -3))
         start.press(forDuration: 0.1, thenDragTo: outside)
         XCTAssertEqual(editor.value as? String, initial + "q")
+        // Holding until q's alternates open, then sliding well away from the
+        // key and its callout, still cancels.
+        start.press(forDuration: 0.8, thenDragTo: outside)
+        XCTAssertEqual(editor.value as? String, initial + "q")
     }
 
     func testNavigationToolbarAndMergedToolsSettings() {
@@ -69,9 +73,11 @@ final class ScriptKeyboardUITests: XCTestCase {
         app.buttons["keyboard.quickSettings"].tap()
         app.buttons["Layout & keys"].tap()
         app.buttons["Extra editing row on wide layouts"].tap()
-        let escape = app.descendants(matching: .any)["key.Esc"].firstMatch
-        XCTAssertTrue(escape.waitForExistence(timeout: 5))
-        for title in ["Esc", "Home", "End", "Tab", "Return", "Outdent", "Indent", "{"] {
+        let home = app.descendants(matching: .any)["key.Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5))
+        // Esc stays on the toolbar by default, so the row doesn't repeat it.
+        XCTAssertTrue(app.buttons["keyboard.escape"].isHittable)
+        for title in ["Home", "End", "Tab", "Return", "Outdent", "Indent", "{"] {
             XCTAssertTrue(app.descendants(matching: .any)["key.\(title)"].firstMatch.isHittable)
         }
         app.descendants(matching: .any)["key.q"].firstMatch.tap()
@@ -97,9 +103,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         guard (surface.value as? String)?.contains("horizontalDivision=true") == true else {
             throw XCTSkip("The simulator still reports a vertical book fold. Set a horizontal fold in Device Hub before running this pose check.")
         }
-        let escape = app.descendants(matching: .any)["key.Esc"].firstMatch
-        XCTAssertTrue(escape.waitForExistence(timeout: 10), surface.value as? String ?? "No surface")
-        XCTAssertTrue(escape.isHittable)
+        let home = app.descendants(matching: .any)["key.Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 10), surface.value as? String ?? "No surface")
+        XCTAssertTrue(home.isHittable)
+        XCTAssertTrue(app.buttons["keyboard.escape"].isHittable)
         XCTAssertTrue((surface.value as? String)?.hasPrefix("Tabletop") == true)
         XCTAssertGreaterThan(surface.frame.minY, app.frame.height * 0.4)
         XCTAssertGreaterThan(surface.frame.height, app.frame.height * 0.3)
@@ -126,7 +133,7 @@ final class ScriptKeyboardUITests: XCTestCase {
         let initial = editor.value as? String ?? ""
         app.buttons["keyboard.quickSettings"].tap()
         app.buttons["Editing preferences"].tap()
-        app.buttons["Swipe code words · beta"].tap()
+        app.buttons["Swipe typing · beta"].tap()
         a.press(forDuration: 0.05, thenDragTo: s)
         XCTAssertEqual(editor.value as? String, initial + "as")
     }
@@ -381,13 +388,18 @@ final class ScriptKeyboardUITests: XCTestCase {
         add(footer)
         otherApps.tap()
         XCTAssertTrue(app.navigationBars["Other Apps"].waitForExistence(timeout: 5))
-        let codable = element("otherApps.codable")
-        let taktung = element("otherApps.taktung")
         let appsList = app.collectionViews.firstMatch
-        scrollToVisible(codable, in: appsList, app: app)
-        XCTAssertTrue(codable.label.contains("Codable"))
-        scrollToVisible(taktung, in: appsList, app: app)
-        XCTAssertTrue(taktung.label.contains("Taktung"))
+        for (identifier, name) in [
+            ("otherApps.codable", "Codable"),
+            ("otherApps.taktung", "Taktung"),
+            ("otherApps.paperGrain", "Paper & Grain")
+        ] {
+            let appLink = element(identifier)
+            scrollToVisible(appLink, in: appsList, app: app)
+            XCTAssertTrue(appLink.label.contains(name))
+            XCTAssertGreaterThanOrEqual(appLink.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(appLink.frame.height, 44)
+        }
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = accessibilityText ? "Other-apps-largest-text" : "Other-apps"
         screenshot.lifetime = .keepAlways

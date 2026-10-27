@@ -160,7 +160,8 @@ final class AppStoreCaptureTests: XCTestCase {
     }
 
     private func tapMenuItem(_ title: String, app: XCUIApplication) {
-        let item = app.buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+        // iOS 27.2 appends a menu item's subtitle to its label.
+        let item = app.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", title, title + ", ")).firstMatch
         let menu = app.collectionViews.firstMatch
         _ = item.waitForExistence(timeout: 3)
         for attempt in 0..<10 {

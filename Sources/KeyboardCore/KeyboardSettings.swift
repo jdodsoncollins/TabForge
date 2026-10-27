@@ -76,6 +76,49 @@ public enum KeySize: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum HapticStrength: String, Codable, CaseIterable, Sendable {
+    case light = "Light", medium = "Medium", strong = "Strong"
+}
+
+/// Keys the full-layout toolbar can show, in their fixed left-to-right order.
+/// The tools and settings gear always follows them.
+public enum ToolbarKey: String, CaseIterable, Sendable {
+    case escape, tab, control, option, command, deleteLine, pipe, tilde, backtick, backslash, dollar, left, down, up, right
+    public static let defaults: [Self] = [.escape, .control, .option, .command, .deleteLine, .left, .down, .up, .right]
+    /// Keeps each toolbar target usable on the narrowest supported phone.
+    public static let maximumCount = 10
+    public var title: String {
+        switch self {
+        case .escape: "Esc"
+        case .tab: "Tab"
+        case .control: "Ctrl"
+        case .option: "Option ⌥"
+        case .command: "Command ⌘"
+        case .deleteLine: "Delete-line key"
+        case .pipe: "Pipe |"
+        case .tilde: "Tilde ~"
+        case .backtick: "Backtick `"
+        case .backslash: "Backslash \\"
+        case .dollar: "Dollar $"
+        case .left: "Left arrow"
+        case .down: "Down arrow"
+        case .up: "Up arrow"
+        case .right: "Right arrow"
+        }
+    }
+    /// The literal text for character keys.
+    public var text: String? {
+        switch self {
+        case .pipe: "|"
+        case .tilde: "~"
+        case .backtick: "`"
+        case .backslash: "\\"
+        case .dollar: "$"
+        default: nil
+        }
+    }
+}
+
 public enum KeyboardHeightMode: String, Codable, CaseIterable, Sendable {
     case automatic = "Automatic", compact = "Compact", full = "Full"
 }
@@ -141,7 +184,45 @@ public struct KeyboardSettings: Codable, Equatable, Sendable {
     public var swipeTyping = false
     public var cursorScrubbing = true
     public var haptics = true
+    private var selectedHapticStrength: HapticStrength?
+    public var hapticStrength: HapticStrength {
+        get { selectedHapticStrength ?? .light }
+        set { selectedHapticStrength = newValue == .light ? nil : newValue }
+    }
+    private var keyClickSounds: Bool?
+    /// Plays the system keyboard click, which also follows the user's
+    /// Sounds › Keyboard Clicks setting and needs no Full Access.
+    public var keyClicks: Bool {
+        get { keyClickSounds ?? true }
+        set { keyClickSounds = newValue ? nil : false }
+    }
     public var keyPreviews = true
+    private var sentenceCapitalization: Bool?
+    /// Applies only in prose fields whose host asks for sentence capitals.
+    public var autoCapitalize: Bool {
+        get { sentenceCapitalization ?? true }
+        set { sentenceCapitalization = newValue ? nil : false }
+    }
+    private var doubleSpacePeriod: Bool?
+    public var periodShortcut: Bool {
+        get { doubleSpacePeriod ?? true }
+        set { doubleSpacePeriod = newValue ? nil : false }
+    }
+    // Raw values keep a record readable if a later version adds a key.
+    private var selectedToolbarKeys: [String]?
+    public var toolbarKeys: [ToolbarKey] {
+        get { selectedToolbarKeys.map { $0.compactMap(ToolbarKey.init(rawValue:)) } ?? ToolbarKey.defaults }
+        set {
+            let ordered = ToolbarKey.allCases.filter(newValue.contains)
+            selectedToolbarKeys = ordered == ToolbarKey.defaults ? nil : ordered.map(\.rawValue)
+        }
+    }
+    private var shownTips: Int?
+    /// How many one-time keyboard tips have been shown.
+    public var tipsShown: Int {
+        get { shownTips ?? 0 }
+        set { shownTips = newValue == 0 ? nil : newValue }
+    }
     public var showNumberRow = false
     private var extraEditingRow: Bool?
     public var showNavigationRow: Bool {

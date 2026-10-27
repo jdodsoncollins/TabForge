@@ -1,6 +1,6 @@
 # Third-party notices and asset provenance
 
-TabForge's original code and documentation are available under the [MIT license](LICENSE). The upstream notices below apply to the identified palette material and must be retained when redistributing it. TabForge's license does not replace Apple's platform terms or grant rights in third-party names and trademarks.
+TabForge's original code and documentation are available under the [MIT license](LICENSE). The upstream notices below apply to the identified palette and dictionary material and must be retained when redistributing it. TabForge's license does not replace Apple's platform terms or grant rights in third-party names and trademarks.
 
 The app currently has no third-party package dependency. Its Swift package dependency is the local `KeyboardCore` target. The app uses Apple's system frameworks rather than bundling their implementations.
 
@@ -78,8 +78,33 @@ The companion app’s Other Apps page includes bundled promotional icons for Jer
 
 The product names and icons identify Jeremy Collins’s apps and remain the developer’s marks and artwork. The TabForge MIT license grants no trademark rights or permission to imply endorsement of another product. The App Store links open only when the user chooses them.
 
-## Swipe vocabulary and researched alternatives
+## English swipe vocabulary
 
-`Sources/KeyboardCore/SwipeDecoder.swift` contains TabForge's small, deterministic swipe recognizer and an embedded list of ordinary programming and English words. It does not bundle a third-party dictionary, training corpus, neural model, or SDK.
+`Sources/KeyboardCore/Resources/swipe-english.txt` includes 38,604 generated word forms from Kevin Atkinson's English Speller Database (ESDB), formerly SCOWL. This data has the permission notice below; TabForge's MIT license does not replace it. The pinned source, checksum, filtering, and reproducible importer are documented in [the vocabulary provenance](docs/swipe-lexicon.md). The keyboard uses this bundled resource offline; it does not download dictionaries or learn from typing.
 
-The [swipe-engine research](docs/swipe-engine-research-2026-10-17.md) discusses Ortholinear, FUTO Swipe, KeyboardKit, and other candidates. None is integrated or redistributed by this version. Their licenses are separate from TabForge's MIT license and must be reviewed, with notices and any distribution obligations addressed, before importing code, dictionaries, or model weights.
+```text
+Copyright 2000-2026 by Kevin Atkinson
+Permission to use, copy, modify, distribute, and sell any part of the English
+Speller Database (ESDB, previously known as SCOWLv2), or word lists
+created from it, is hereby granted without fee, provided that the above
+copyright notice appears in all copies and that both the above copyright
+notice and this notice appear in supporting documentation.  Kevin Atkinson
+makes no representations about the suitability of this database for any
+purpose.  It is provided "as is" without express or implied warranty.
+ESDB is derived from many sources, most of which are in the Public Domain.
+Data from the Corpus of Contemporary American English (COCA) was also used.
+
+All data from COCA comes from 3-gram data that is not freely available;
+however, the usage is within the rights given by the NDA that was signed when
+purchasing the data.  More information on COCA is available at
+https://www.english-corpora.org/coca/.
+The primary source of words for ESDB comes from 12dicts and ENABLE2K.  Both
+are in the Public Domain, but Alan Beale <biljir@pobox.com> deserves special
+credit as he is the author of 12dicts and a major contributor to ENABLE2K.  In
+addition, he gave me an incredible amount of feedback and created a number of
+special lists in order to help improve the overall quality of ESDB.
+```
+
+## Researched swipe alternatives
+
+The [swipe-engine research](docs/swipe-engine-research-2026-10-17.md) discusses Ortholinear, FUTO Swipe, KeyboardKit, and other candidates. None of those engines, dictionaries, models, or SDKs is integrated or redistributed. TabForge's decoder remains its own implementation. Their separate licenses must be reviewed before any future integration.

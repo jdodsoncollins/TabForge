@@ -48,6 +48,14 @@ struct SnippetDraftRoutingTests {
         return nil
     }
 
+    private func menu(_ title: String, in elements: [UIMenuElement]) -> UIMenu? {
+        for case let menu as UIMenu in elements {
+            if menu.title == title { return menu }
+            if let found = self.menu(title, in: menu.children) { return found }
+        }
+        return nil
+    }
+
     @Test func formattingAndLineActionsUseOnlyTheLocalDraft() throws {
         let (keyboard, store, host) = make()
         store.settings.compatibility = .editor; keyboard.applySettings()
@@ -83,6 +91,7 @@ struct SnippetDraftRoutingTests {
             ("Key press previews", \KeyboardSettings.keyPreviews),
             ("Drag space to move cursor", \KeyboardSettings.cursorScrubbing),
             ("Hold Delete to repeat", \KeyboardSettings.repeatDelete),
+            ("Key click sounds", \KeyboardSettings.keyClicks),
             ("Haptic feedback", \KeyboardSettings.haptics),
             ("Return sends carriage return (CR)", \KeyboardSettings.terminalReturnIsCR),
             ("Delete sends DEL instead of BS", \KeyboardSettings.terminalDeleteIsDEL),
@@ -94,6 +103,16 @@ struct SnippetDraftRoutingTests {
             trigger.addAction(option, for: .primaryActionTriggered)
             trigger.sendActions(for: .primaryActionTriggered)
             #expect(store.settings[keyPath: keyPath] != original)
+        }
+        store.settings.haptics = true
+        keyboard.applySettings()
+        for title in ["Medium", "Strong", "Light"] {
+            let strength = try #require(menu("Haptic strength", in: gear.menu?.children ?? []))
+            let option = try #require(action(title, in: strength.children))
+            let trigger = UIButton()
+            trigger.addAction(option, for: .primaryActionTriggered)
+            trigger.sendActions(for: .primaryActionTriggered)
+            #expect(store.settings.hapticStrength.rawValue == title)
         }
         for title in ["Compact", "Balanced", "Comfortable", "Add snippet", "Reset keyboard preferences and snippets"] {
             #expect(action(title, in: gear.menu?.children ?? []) != nil)

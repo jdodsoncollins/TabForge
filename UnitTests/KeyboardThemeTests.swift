@@ -95,12 +95,12 @@ struct KeyboardThemeTests {
         keyboard.frame = CGRect(x: 0, y: 0, width: width, height: keyboard.desiredHeight)
         keyboard.layoutIfNeeded()
         let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
-        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.sorted { $0.frame.minX < $1.frame.minX }
+        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
         #expect(controls.count == 10)
         #expect(controls.map(\.accessibilityIdentifier) == [
-            "keyboard.arrow.left", "keyboard.arrow.down", "keyboard.arrow.up", "keyboard.arrow.right",
-            "keyboard.modifier.control", "keyboard.modifier.option", "keyboard.modifier.command",
-            "keyboard.deleteLine", "keyboard.escape", "keyboard.quickSettings"
+            "keyboard.escape", "keyboard.modifier.control", "keyboard.modifier.option", "keyboard.modifier.command",
+            "keyboard.deleteLine", "keyboard.arrow.left", "keyboard.arrow.down", "keyboard.arrow.up", "keyboard.arrow.right",
+            "keyboard.quickSettings"
         ])
         for button in controls {
             #expect(button.frame.width >= 30 && button.frame.height == 44)
@@ -210,6 +210,8 @@ struct KeyboardThemeTests {
         defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
         preferences.settings.showNavigationRow = true
         preferences.settings.compatibility = profile
+        // With these keys off the toolbar, the navigation row carries them.
+        preferences.settings.toolbarKeys = [.control, .option, .command, .left, .right]
         let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
         keyboard.frame = CGRect(x: 0, y: 0, width: width, height: 440)
         keyboard.layoutIfNeeded()
@@ -223,6 +225,31 @@ struct KeyboardThemeTests {
         #expect(keyboard.subviews.contains { $0.accessibilityIdentifier == "key.Up" } == (profile == .terminal))
         let line = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "key.Delete line" } as? UIButton)
         #expect(line.isEnabled == (profile != .remoteDesktop))
+    }
+
+    @Test(arguments: CompatibilityMode.allCases)
+    func fullKeyboardRowSkipsKeysTheToolbarShows(_ profile: CompatibilityMode) throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.showNavigationRow = true
+        preferences.settings.compatibility = profile
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        keyboard.frame = CGRect(x: 0, y: 0, width: 951, height: 440)
+        keyboard.layoutIfNeeded()
+        keyboard.frame.size.height = keyboard.desiredHeight
+        keyboard.layoutIfNeeded()
+        for title in ["Esc", "Delete line", "Up", "Down"] {
+            #expect(!keyboard.subviews.contains { $0.accessibilityIdentifier == "key.\(title)" })
+        }
+        for title in ["Home", "End", "Outdent", "Indent"] {
+            #expect(keyboard.subviews.contains { $0.accessibilityIdentifier == "key.\(title)" })
+        }
+        #expect(keyboard.subviews.contains { $0.accessibilityIdentifier == "key.Page Up" } == (profile == .terminal))
+        let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
+        for identifier in ["keyboard.escape", "keyboard.deleteLine", "keyboard.arrow.up", "keyboard.arrow.down"] {
+            let button = try #require(toolbar.subviews.first { $0.accessibilityIdentifier == identifier })
+            #expect(!button.isHidden)
+        }
     }
 
     @Test func transientCleanupPreservesTypingAndAllowsReopening() async throws {

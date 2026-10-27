@@ -1,8 +1,12 @@
 # US English listing copy
 
-Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `SECURITY.md`, Apple's product-page documentation and comparable public keyboard listings. The current local revision describes keyboard-only settings and snippets with no Full Access or App Group. The revised description and reviewer notes are saved in the editable App Store Connect draft. Build 11 passed the archive audit and Apple's binary validation. No App Review submission has been made. Private receipts remain in ignored release artifacts.
+Version 1.0.1 (15) and its five consumable tips were submitted on October 21, 2026. The version, parent review and each tip read WAITING_FOR_REVIEW, with release type AFTER_APPROVAL. Build 15 remains VALID and available to the existing internal TestFlight group. All 22 focused simulator checks and 24 archive/export checks passed; testing notes match the saved copy and strict TestFlight validation has no issues. The six-item submission succeeded with zero blockers. The live version 1.0 (12) remains on the App Store. This update adds the optional Tip Jar and Paper & Grain in Other Apps.
 
-## Proposed presentation
+The approved main description is retained with a short optional-support paragraph. Reviewer notes explain all five consumable tips, Apple purchase handling and the absence of feature unlocks. What's New includes the Other Apps addition. [Build 15 TestFlight guidance](testflight-build15-en-US.txt) covers scene-aware checkout and free sandbox testing; build 13/14 notes are preserved as historical guidance. The Humanizer 3.1.0 pass covered the edited copy. Name, subtitle, keywords, promotional text and the existing 31 screenshot captions/header copy are unchanged. Version 1.0.1 metadata and build 15 TestFlight notes match the local copy exactly; the description and reviewer notes are unchanged. All 31 inherited screenshots and all three 16-second App Previews are COMPLETE; preview MD5 checksums match local files. One header placement is inherited.
+
+The October 21 [website policy](https://www.jeremycollins.net/tabforge/privacy) is published and freshly verified live. Its reviewed [source copy](privacy-policy-en-US.md) explains Apple's payment handling, fixed English/programming vocabularies, bounded in-memory deduplication and no TabForge backend, upload or purchase history. The public Data Not Collected label was freshly verified. Preserve private account records and reviewer contact fields outside public copy.
+
+## Prepared presentation
 
 - **Name:** TabForge: Code Keyboard
 - **Subtitle:** Programming and terminal keys
@@ -11,9 +15,9 @@ Prepared October 18, 2026 from the current source, `DESIGN.md`, `PRIVACY.md`, `S
 - **Promotional text:** see `promotional-text-en-US.txt`.
 - **Description:** see `description-en-US.txt`.
 
-`app-info-en-US.json` and `version-en-US.json` use App Store Connect's canonical field names. The Support URL points to the repository's `docs/SUPPORT.md`, which includes the owner's approved public support email, GitHub Issues and private security reporting. The Privacy Policy URL remains `https://www.jeremycollins.net/tabforge-privacy-policy`. The live website policy now describes the same no-sharing design. Its published text is represented by [privacy-policy-en-US.md](privacy-policy-en-US.md). Preserve private App Review contact information separately. The first App Store version has no What's New field; `whatsNew` is intentionally omitted rather than filled with a beta changelog.
+`app-info-en-US.json` and `version-en-US.json` use App Store Connect's canonical field names. The Support URL points to the repository's `docs/SUPPORT.md`, which includes the owner's approved public support email, GitHub Issues and private security reporting. The canonical Marketing URL is `https://www.jeremycollins.net/tabforge` and the Privacy Policy URL is `https://www.jeremycollins.net/tabforge/privacy`. Both were freshly verified HTTP 200. The Support URL stays on GitHub because it provides contact and reporting guidance. The saved Marketing and Privacy Policy URLs read back exactly. The live product page describes optional Apple-operated tips while all features remain free; the published October 21 policy matches the submitted implementation. Preserve private App Review contact information separately. This update includes `whatsNew` from [whats-new-en-US.txt](whats-new-en-US.txt).
 
-The local audit and exact Unicode/UTF-8 field lengths are in `validation.json`. Keywords are all ASCII, so the recommended field fits both Apple's 100-byte platform reference and the product-page guidance's 100-character wording. `validate.py` recomputes the audit after edits. File terminators are excluded from listing text. Passing `--staging-dir artifacts/app-store-release-2026-10-18/metadata` also writes the app-info and version localization files. The ignored release-artifact directory holds ASC identifiers and validation receipts separately from this public copy directory.
+The local audit and exact Unicode/UTF-8 field lengths are in `validation.json`. Keywords are all ASCII, so the recommended field fits both Apple's 100-byte platform reference and the product-page guidance's 100-character wording. `validate.py` recomputes the audit after edits. File terminators are excluded from listing text. Passing `--staging-dir artifacts/submission-2026-10-21/metadata` also writes the app-info and version localization files. The ignored release-artifact directory holds ASC identifiers and validation receipts separately from this public copy directory.
 
 ## Search choices
 
@@ -41,14 +45,14 @@ The fifth image adapts to the actual device capture; it is one image per device 
 
 ## Release readiness checks
 
-The [release-readiness review](../readiness.md) distinguishes current build 11 checks from historical build 9/10 evidence. Before a future App Review submission:
+The [release-readiness review](../readiness.md) separates the 1.0.1 candidate checks from the live build 12 and older evidence. For future App Review submissions:
 
 1. Verify a matching new binary has no Full Access request, App Group entitlement or sharing code, and that keyboard settings/snippet management works in the extension without altering host text during snippet editing.
 2. Verify the companion has no persistent keyboard controls: previews use only memory while the playground draft remains saved independently.
 3. Publish the matching website policy, repository support/privacy documents, and listing/reviewer copy through the authorized release process, then read them back. Changing these local files does not change any remote destination.
 4. Keep App Privacy publication separate from the source privacy manifest. Local-only processing supports the prepared Data Not Collected recommendation; do not claim the questionnaire is published without checking its actual state.
 5. Refresh screenshots whose settings or preview UI changed, and record processing, order, crop safety and source checksums. Earlier complete media receipts describe the older UI.
-6. Preserve the saved price, private review contact, manual-release setting and unsubmitted version. Re-run applicable readiness checks against the new binary; older zero-warning results are historical evidence.
+6. Verify the saved price, private review contact and intended release setting. Re-run applicable readiness checks against the new binary; older zero-warning results are historical evidence.
 7. Expose only accessibility claims whose complete criteria have been verified. Simulator labels and layout checks do not establish physical assistive-technology flows, palm rejection or immunity to extension termination.
 
 ## Sources checked

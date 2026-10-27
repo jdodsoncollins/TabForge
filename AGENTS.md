@@ -31,6 +31,8 @@ xcodebuild -project ScriptKeyboard.xcodeproj -scheme ScriptKeyboard \
 
 When changing `project.yml`, run `xcodegen generate` and include the generated project changes. Run focused tests during development, then the suites relevant to the final change. Add regression coverage for input correctness, lifecycle, or layout failures; avoid tests that merely repeat implementation details.
 
+Local StoreKit tests require exclusive simulator ownership: wait for the previous `xcodebuild` process to exit before starting another run on that simulator. A serial test plan does not serialize independent processes. See [StoreKit testing](docs/storekit-testing.md).
+
 The checked-in project references public `Configuration/Build.xcconfig`, which optionally includes ignored `Configuration/Signing.local.xcconfig`. Normal regeneration from `project.yml` preserves symbolic identifiers and does not copy local values into the project. Ignored legacy `project.local.yml` and private release records may also exist on a maintainer's machine. Do not publish them. If a private spec was used to regenerate the project, regenerate from public `project.yml` before committing so personal team/profile configuration stays out of the public project. Treat env files as data; do not source or evaluate them.
 
 Input and layout changes need coverage across a narrow phone, landscape phone, iPad, and the relevant Duo poses. Include short windows, safe areas, compact height, and accessibility settings when affected. Simulator coverage does not prove physical multitouch, palm rejection, microphone availability, memory-pressure survival, or compatibility with every terminal client. Record those limits honestly.

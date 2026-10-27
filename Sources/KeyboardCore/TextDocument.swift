@@ -17,6 +17,10 @@ public protocol TextDocument: AnyObject {
     var allowsAutocorrection: Bool { get }
     /// Identifies the focused document when the host exposes an identity.
     var autocorrectionContextIdentifier: UUID? { get }
+    /// True only when the host asks for sentence capitals in a plain prose field.
+    var capitalizesSentences: Bool { get }
+    /// The host's return-key title, such as "Send"; nil keeps the return symbol.
+    var returnKeyLabel: String? { get }
     func insert(_ text: String)
     func deleteBackward()
     /// Matches UITextInput offsets, measured in UTF-16 code units.
@@ -36,6 +40,8 @@ public extension TextDocument {
     var hasCompleteContext: Bool { false }
     var allowsAutocorrection: Bool { false }
     var autocorrectionContextIdentifier: UUID? { nil }
+    var capitalizesSentences: Bool { false }
+    var returnKeyLabel: String? { nil }
     func contextBeforeInput(maximumCharacters: Int) -> String? {
         before.map { String($0.suffix(max(0, maximumCharacters))) }
     }
@@ -150,6 +156,8 @@ public final class MemoryDocument: TextDocument {
     public var exposesContext = true
     public var allowsAutocorrection = false
     public var autocorrectionContextIdentifier: UUID? = UUID()
+    public var capitalizesSentences = false
+    public var returnKeyLabel: String?
     public var hasCompleteContext: Bool { exposesContext }
     public var cursor: Int { selection.location }
     public init(text: String = "", cursor: Int? = nil, selection: NSRange? = nil) {

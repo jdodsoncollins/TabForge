@@ -47,6 +47,7 @@ final class KeyboardPerformanceTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         let preferences = PreferencesStore(local: defaults)
         preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
         let document = MemoryDocument(text: String(repeating: "let item = 42\n", count: 100))
         let keyboard = CodingKeyboardView(document: document, preferences: preferences)
         keyboard.frame = CGRect(x: 0, y: 0, width: 390, height: keyboard.desiredHeight)
@@ -65,6 +66,7 @@ final class KeyboardPerformanceTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         let preferences = PreferencesStore(local: defaults)
         preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
         let document = MemoryDocument()
         let keyboard = CodingKeyboardView(document: document, preferences: preferences)
         keyboard.layoutIfNeeded()
@@ -89,6 +91,7 @@ final class KeyboardPerformanceTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         let preferences = PreferencesStore(local: defaults)
         preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
         let host = EditorHostView(preferences: preferences, openSettings: {})
         host.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         host.layoutIfNeeded()

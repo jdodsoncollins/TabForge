@@ -7,6 +7,13 @@ final class KeyboardViewController: UIInputViewController {
     private var heightConstraint: NSLayoutConstraint?
     private var lexiconTask: Task<Void, Never>?
 
+    override func loadView() {
+        // A custom input view adopts UIInputViewAudioFeedback for key clicks.
+        let input = KeyClickInputView(frame: .zero, inputViewStyle: .keyboard)
+        input.clicksEnabled = { [weak self] in self?.preferences?.settings.keyClicks ?? false }
+        view = input
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         inputView?.allowsSelfSizing = true
@@ -55,30 +62,33 @@ final class KeyboardViewController: UIInputViewController {
         preferences.refresh()
         keyboard.applySettings()
         // Reopening can attach to a different field without a settings change.
-        keyboard.refreshContext()
+        keyboard.hostContextDidChange()
         prepareAutocorrection()
     }
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         prepareAutocorrection()
+        keyboard.showNextTipIfNeeded()
     }
     override func textDidChange(_ textInput: (any UITextInput)?) {
         super.textDidChange(textInput)
-        keyboard?.refreshContext()
+        keyboard?.hostContextDidChange()
     }
     override func textWillChange(_ textInput: (any UITextInput)?) {
         super.textWillChange(textInput)
         keyboard?.engine.invalidateAutocorrection()
+        keyboard?.invalidateSwipeContext()
     }
     override func selectionWillChange(_ textInput: (any UITextInput)?) {
         super.selectionWillChange(textInput)
         // UITextInputDelegate reports host-owned changes, such as a tap moving
         // the cursor. A prior correction must never follow the user elsewhere.
         keyboard?.engine.invalidateAutocorrection()
+        keyboard?.invalidateSwipeContext()
     }
     override func selectionDidChange(_ textInput: (any UITextInput)?) {
         super.selectionDidChange(textInput)
-        keyboard?.refreshContext()
+        keyboard?.hostContextDidChange()
     }
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)

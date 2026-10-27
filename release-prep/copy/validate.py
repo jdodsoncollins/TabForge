@@ -20,9 +20,10 @@ app_info = json.loads(read_text("app-info-en-US.json"))
 version = {
     "description": read_text("description-en-US.txt"),
     "keywords": "script,shell,indent,snippets,braces,brackets,arrows,escape,remote,desktop,syntax,editor,punctuation",
-    "marketingUrl": "https://github.com/jdodsoncollins/TabForge",
+    "marketingUrl": "https://www.jeremycollins.net/tabforge",
     "supportUrl": "https://github.com/jdodsoncollins/TabForge/blob/main/docs/SUPPORT.md",
     "promotionalText": read_text("promotional-text-en-US.txt"),
+    "whatsNew": read_text("whats-new-en-US.txt"),
 }
 (ROOT / "version-en-US.json").write_text(
     json.dumps(version, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -35,6 +36,7 @@ limits = {
     "description": 4000,
     "promotionalText": 170,
     "reviewNotes": 4000,
+    "whatsNew": 4000,
 }
 fields = {}
 for name, maximum in limits.items():
@@ -67,11 +69,11 @@ checks = {
 }
 report = {
     "locale": "en-US",
-    "version": "1.0",
+    "version": "1.0.1",
     "scope": "offline content validation; remote state is not queried",
     "fields": fields,
     "checks": checks,
-    "whatsNew": "Intentionally omitted: unavailable for an initial App Store version.",
+    "whatsNew": "Version 1.0.1 update notes are included in canonical metadata.",
     "supportUrl": version["supportUrl"],
     "supportUrlStatus": "Confirm the public page and approved support contact before submission.",
     "keywordIntelligence": {
@@ -85,7 +87,7 @@ report = {
 (ROOT / "validation.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 if args.staging_dir:
     app_info_file = args.staging_dir / "app-info" / "en-US.json"
-    version_file = args.staging_dir / "version" / "1.0" / "en-US.json"
+    version_file = args.staging_dir / "version" / "1.0.1" / "en-US.json"
     for destination, contents in [(app_info_file, app_info), (version_file, version)]:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(contents, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

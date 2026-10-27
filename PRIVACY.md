@@ -1,16 +1,18 @@
 # Privacy and data handling
 
-Questions can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). The App Store policy address is [jeremycollins.net/tabforge-privacy-policy](https://www.jeremycollins.net/tabforge-privacy-policy).
+Questions can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). The App Store policy address is [jeremycollins.net/tabforge/privacy](https://www.jeremycollins.net/tabforge/privacy).
 
-TabForge's app and keyboard contain no analytics, advertising, account system, or application networking service. The keyboard does not send keystrokes, surrounding text, snippets, swipe gestures, or spelling requests to a TabForge server. The code is available for inspection under the repository's [MIT license](LICENSE).
+TabForge's app and keyboard contain no analytics, advertising, account system, or TabForge-operated networking service. The optional companion Tip Jar uses Apple's StoreKit service as described below. The keyboard does not send keystrokes, surrounding text, snippets, swipe gestures, or spelling requests to a TabForge server. The code is available for inspection under the repository's [MIT license](LICENSE).
 
 This document describes TabForge's implementation. It does not describe the data practices of the app you type into, your terminal or remote-desktop service, Apple system features, GitHub, or your device backup provider.
+
+The Tip Jar section below describes version 1.0.1 (15), submitted with all five tips on October 21, 2026. The version and review submission are WAITING_FOR_REVIEW, with release after approval configured; build 15 remains available to the existing internal TestFlight group. The live version 1.0 (12) has no purchases. The matching October 21 [website policy](https://www.jeremycollins.net/tabforge/privacy) is published and was verified live, alongside the [product page](https://www.jeremycollins.net/tabforge). The App Store's published Data Not Collected label was freshly verified. The [release copy](release-prep/copy/privacy-policy-en-US.md) preserves the reviewed policy text.
 
 ## What stays in memory
 
 The extension receives text and field information that iOS and the host app expose through `UITextDocumentProxy`. It uses this context for local editing, indentation, completions, cursor movement, and optional spelling correction. The host can limit or withhold context. TabForge does not build a keystroke history or save the host document.
 
-The optional swipe recognizer uses an included coding vocabulary. Gesture traces and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
+The optional swipe recognizer uses included English and programming vocabularies. The English dictionary is a fixed, bundled resource; the keyboard does not download words or learn from typing. Gesture traces and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
 
 Optional English prose correction uses Apple's `UITextChecker` on the device. When enabled, the extension can request Apple's supplementary keyboard lexicon, which may include names and text-shortcut entries. TabForge keeps a bounded set in memory to avoid correcting those words; it does not save or log that lexicon. Spelling resources, correction state, swipe traces, repeat tasks, and held-key state are released when the keyboard is dismissed or receives a memory warning. Ordinary operating-system memory management still applies; this is not a secure-memory-erasure guarantee.
 
@@ -45,6 +47,14 @@ The keyboard extension does not record microphone audio. It leaves the system di
 The companion playground's **Voice to code** feature starts only after a user action and requests microphone and Speech Recognition permissions. Its Speech request requires on-device English recognition. If that capability or language support is unavailable, TabForge does not fall back to cloud recognition. Audio buffers are passed to Apple's on-device Speech service; the app does not write recordings to a file. The transcript remains in the voice view until the user dismisses it or inserts it into the saved playground draft. Recording is cancelled on dismissal, backgrounding, or relevant audio interruption.
 
 System Dictation and Writing Tools are controlled by Apple and the user's system settings. Their data handling is outside TabForge's on-device voice implementation. Review Apple's disclosures before invoking those features with sensitive material.
+
+## Optional tips through Apple (version 1.0.1)
+
+The companion app's Tip Jar uses Apple's StoreKit service to load products and process an optional, one-time tip. These operations use Apple's network, account, and payment infrastructure. Tips do not unlock features or start a subscription. The keyboard extension contains no purchase flow, requests no Full Access, and does not share its records with the companion app.
+
+Apple presents the purchase confirmation and handles payment information. The app receives StoreKit product and transaction results to display a localized price, handle cancellation or pending approval, verify a completed tip, and finish that transaction. It does not send typing, snippets, playground text, or speech to StoreKit. It does not create a TabForge account or send transaction details to a TabForge server, analytics service, or payment provider. There is no app-maintained receipt, tip total, or transaction history in `UserDefaults` or another app file; this does not delete the transaction records maintained by Apple. Apple's handling of account, payment, and purchase information is described in [App Store & Privacy](https://www.apple.com/legal/privacy/data/en/app-store/).
+
+The release review supports retaining the developer-side **Data Not Collected** declaration for this implementation. Apple's [App Privacy guidance](https://developer.apple.com/app-store/app-privacy-details/) excludes payment details entered outside the app and inaccessible to its developer, and distinguishes on-device processing from collection. TabForge processes transaction results locally and keeps only a bounded set of recent transaction identifiers in memory to prevent duplicate acknowledgements. It adds no purchase backend, upload, transaction analytics, or app-maintained purchase history. Apple maintains its own App Store records. A future change that sends or retains customer purchase data outside these boundaries requires a new disclosure review.
 
 ## Text sent to other apps and external links
 

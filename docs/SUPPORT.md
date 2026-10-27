@@ -24,7 +24,7 @@ The companion's keyboard and layout guide are previews. Their settings and snipp
 
 **Autocorrect does not change a word.** English prose autocorrect is off by default and only operates in eligible text fields. It skips code-like input, host opt-outs, structured fields, Terminal and Remote desktop profiles, and TabForge's code playground. Space commits a correction; immediate Delete restores the original spelling.
 
-**Swipe produces the wrong word.** Swipe code words is experimental and uses a small coding vocabulary. Choose an alternative in the gear menu or turn the feature off. It is not Apple's QuickPath engine.
+**Swipe produces the wrong word.** Swipe typing is experimental. Current source includes an offline English and programming vocabulary; earlier binaries have a smaller coding vocabulary. Choose an alternative in the gear menu or use tap typing for identifiers and unsupported words. Use tap typing to replace selected text. It is not Apple's QuickPath engine. [Verification](verification.md) separates source improvements from the installed build.
 
 **Voice-to-code is unavailable.** This feature runs in the companion playground, after you start recording and allow microphone and Speech Recognition access. It requires available on-device English recognition and has no cloud fallback. System Dictation is controlled separately by iOS; switch to Apple's keyboard if necessary.
 

@@ -2,7 +2,7 @@
 
 An MIT-licensed iOS keyboard for programming, scripting, terminals and remote desktops. Native UIKit input, a SwiftUI companion app, and an inspectable local editing engine.
 
-[Source](https://github.com/jdodsoncollins/TabForge) · [Support](docs/SUPPORT.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://www.jeremycollins.net/tabforge) · [Source](https://github.com/jdodsoncollins/TabForge) · [Support](docs/SUPPORT.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Design](DESIGN.md) · [Contributing](CONTRIBUTING.md)
 
 ![TabForge overview showing Tab and Outdent, brackets, shortcuts, and Delete line on iPhone, iPhone Duo, and iPad, including Duo opening into laptop mode](docs/images/tabforge-overview.gif)
 
@@ -12,7 +12,7 @@ Support: [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). Use [priva
 
 ## Privacy and transparency
 
-A keyboard handles sensitive text. TabForge contains no application networking client, analytics, advertising, account service or automatic diagnostic uploader. The extension does not record a keystroke history or transmit typing. It does not request Full Access or use an App Group.
+A keyboard handles sensitive text. TabForge has no backend, analytics, advertising, account service or automatic diagnostic uploader. The optional companion Tip Jar uses Apple’s StoreKit service for purchases. The extension does not record a keystroke history or transmit typing. It does not request Full Access or use an App Group.
 
 The keyboard saves its preferences and custom snippets in its own local container. Manage them from the keyboard's gear menu. The companion app **does save its playground draft locally** and does not synchronize keyboard settings or snippets. Voice input requires on-device recognition; it has no cloud fallback. User-triggered sharing, host apps, Apple system features and device backups have their own data handling. Read [PRIVACY.md](PRIVACY.md) for the complete boundaries, migration limits, and storage details.
 
@@ -20,9 +20,9 @@ The companion keyboard and layout guide are previews. Their settings and snippet
 
 The app's Settings screen links directly to this repository, its privacy documentation and its security policy. Licenses & notices displays the bundled MIT license and third-party notices offline. Public source makes review possible; it is not a claim of an independent security audit or proof that a distributed binary matches a particular commit.
 
-The bottom of Settings includes framework and palette credits, creator details, and an Other Apps page for Codable and Taktung. Their icons are bundled; external pages open only when selected.
+The bottom of Settings includes framework and palette credits, creator details, and an Other Apps page for Codable, Taktung and Paper & Grain. Their icons are bundled; external pages open only when selected.
 
-The App Store [privacy policy](https://www.jeremycollins.net/tabforge-privacy-policy) and [repository privacy documentation](PRIVACY.md) describe the same keyboard-local storage, temporary previews, and absence of Full Access or App Group sharing.
+The published October 21 [privacy policy](https://www.jeremycollins.net/tabforge/privacy) and [product page](https://www.jeremycollins.net/tabforge) describe optional Apple-operated tips while all features remain free. The policy covers the fixed English/programming vocabularies, Apple's payment handling, bounded in-memory transaction deduplication and the absence of a TabForge backend, upload or purchase history. Keyboard settings remain local and companion previews stay temporary, with no Full Access or App Group sharing. The App Store's published Data Not Collected label was freshly verified. Read [PRIVACY.md](PRIVACY.md) for the implementation boundaries.
 
 ## See the keyboard
 
@@ -47,9 +47,15 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 - iOS Standard follows system Light/Dark; Darcula, Dracula and Nord provide code palettes. Light, Dark and Tinted app icons are included.
 - Code editor, Terminal · ANSI and literal Remote desktop profiles. Host/client support determines which control sequences work.
 - Optional conservative English prose autocorrect using Apple's public spelling service and supplementary lexicon. It defaults off, respects eligible host fields and skips code-like input. Space commits; immediate Delete restores the original spelling.
-- Opt-in experimental swipe recognition over a bundled coding vocabulary, and companion voice-to-code with transcript review.
+- Opt-in experimental swipe recognition over a bundled English and programming vocabulary, and companion voice-to-code with transcript review.
 - Native playground selection, undo, syntax highlighting, line numbers and system Writing Tools where supported.
 - Keyboard accessibility labels/state, overlapping key handling, Bold Text and Dynamic Type in settings. Physical assistive-technology and touch coverage has limits documented below.
+
+## Optional Tip Jar (version 1.0.1)
+
+The companion app's submitted update has a Tip Jar with **Kind, Thoughtful, Wonderful, Incredible, and Extraordinary Tips** at US base prices of **$0.99, $1.99, $2.99, $3.99, and $4.99**. Actual prices come from StoreKit in the customer's storefront currency. Tips are voluntary, repeatable consumable purchases; they unlock no features and are not subscriptions. The app and keyboard remain free to use.
+
+The live version 1.0 (12) does not include tips. Version 1.0.1 (15) and all five tips were submitted on October 21, 2026 and are awaiting App Review; the version and review submission read WAITING_FOR_REVIEW, with release after approval configured. Build 15 is VALID and available to the existing internal TestFlight group. It adds scene-aware Apple purchase presentation and Paper & Grain beside Codable and Taktung in Other Apps. All 22 focused checks across Duo, phone and iPad and all 24 archive/export checks passed. A completed physical TestFlight sandbox purchase remains unverified. See [setup, privacy boundaries, and test instructions](docs/tip-jar.md).
 
 ## Build and enable
 
@@ -101,7 +107,7 @@ Choose an installed simulator with `xcrun simctl list devices available`. Core t
 
 Extensions cannot record microphone audio. iOS controls system dictation availability. The companion voice feature requires explicit microphone/Speech permissions and downloaded on-device English support. System Writing Tools and Dictation follow Apple's own availability and privacy rules.
 
-Swipe is experimental and recognizes a small coding vocabulary rather than unrestricted prose. Apple's QuickPath decoder is not a public dependency. [Research](docs/swipe-engine-research-2026-10-17.md) covers possible replacements and their separate code, data and model licenses; none is integrated.
+Swipe is experimental. Its offline dictionary includes 38,604 English word forms plus programming terms; arbitrary identifiers and other languages may need tap typing. Apple's QuickPath decoder is not a public dependency. [Research](docs/swipe-engine-research-2026-10-17.md) covers possible replacements and their separate code, data and model licenses; none of those engines is integrated. [Dictionary provenance and reproduction](docs/swipe-lexicon.md) document the bundled English data.
 
 UIKit controls preserve cancellation, release-inside behavior, expanded hit regions, overlapping presses and modifier snapshots. Apple's private keyboard touch classifier is unavailable. Physical palm/edge rejection, full assistive-technology typing, floating/Split View keyboards, terminal forwarding and sustained extension memory pressure require device checks. iOS can terminate any keyboard extension.
 

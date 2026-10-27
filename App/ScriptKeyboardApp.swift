@@ -4,6 +4,7 @@ import KeyboardCore
 @main
 struct ScriptKeyboardApp: App {
     @State private var preferences: PreferencesStore
+    @State private var tipStore = TipStore()
     init() {
         if ProcessInfo.processInfo.arguments.contains("--uitesting") {
             UserDefaults.standard.removeObject(forKey: "playground.draft")
@@ -14,7 +15,9 @@ struct ScriptKeyboardApp: App {
         WindowGroup {
             AppRootView()
                 .environment(preferences)
+                .environment(tipStore)
                 .tint(Color(uiColor: ScriptTheme.accent))
+                .task { tipStore.startTransactionListener() }
         }
     }
 }

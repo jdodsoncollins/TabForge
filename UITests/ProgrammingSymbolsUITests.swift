@@ -12,7 +12,8 @@ final class ProgrammingSymbolsUITests: XCTestCase {
             app.descendants(matching: .any)["key.\(title)"].firstMatch
         }
         func visibleLiterals() -> Set<String> {
-            Set(app.keys.matching(NSPredicate(format: "identifier BEGINSWITH %@", "key.")).allElementsBoundByIndex.compactMap { element in
+            // Match by identifier; XCUITest can report these keys as buttons rather than keys.
+            Set(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "key.")).allElementsBoundByIndex.compactMap { element in
                 let identifier = element.identifier
                 guard identifier.hasPrefix("key."), element.isHittable else { return nil }
                 let literal = String(identifier.dropFirst(4))

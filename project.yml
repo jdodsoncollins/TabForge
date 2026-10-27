@@ -16,8 +16,8 @@ settings:
     SWIFT_VERSION: '6.0'
     TARGETED_DEVICE_FAMILY: '1,2'
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: '1.0'
-    CURRENT_PROJECT_VERSION: '11'
+    MARKETING_VERSION: '1.0.1'
+    CURRENT_PROJECT_VERSION: '15'
     SUPPORTS_MACCATALYST: NO
     SWIFT_STRICT_CONCURRENCY: complete
 targets:
@@ -90,7 +90,10 @@ targets:
   ScriptKeyboardTests:
     type: bundle.unit-test
     platform: iOS
-    sources: UnitTests
+    sources:
+      - UnitTests
+      - path: Configuration/TipJar.storekit
+        buildPhase: resources
     dependencies:
       - target: ScriptKeyboard
       - package: ScriptKeyboardCore
@@ -102,7 +105,10 @@ targets:
   ScriptKeyboardUITests:
     type: bundle.ui-testing
     platform: iOS
-    sources: UITests
+    sources:
+      - UITests
+      - path: Configuration/TipJar.storekit
+        buildPhase: resources
     dependencies:
       - target: ScriptKeyboard
     settings:
@@ -116,4 +122,20 @@ schemes:
         ScriptKeyboard: all
         ScriptKeyboardExtension: all
     test:
-      targets: [ScriptKeyboardTests, ScriptKeyboardUITests]
+      targets:
+        - name: ScriptKeyboardTests
+          skippedTests: [TipStoreKitTests]
+        - name: ScriptKeyboardUITests
+          skippedTests: [TipJarUITests]
+  ScriptKeyboard-Tips:
+    build:
+      targets:
+        ScriptKeyboard: all
+        ScriptKeyboardExtension: all
+    run:
+      config: Debug
+      storeKitConfiguration: Configuration/TipJar.storekit
+    test:
+      testPlans:
+        - path: TipJar.xctestplan
+          defaultPlan: true

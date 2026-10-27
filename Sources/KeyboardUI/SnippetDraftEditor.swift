@@ -18,6 +18,8 @@ final class KeyboardDocumentRouter: TextDocument {
     var hasCompleteContext: Bool { target.hasCompleteContext }
     var allowsAutocorrection: Bool { local == nil && target.allowsAutocorrection }
     var autocorrectionContextIdentifier: UUID? { target.autocorrectionContextIdentifier }
+    var capitalizesSentences: Bool { local == nil && host.capitalizesSentences }
+    var returnKeyLabel: String? { local == nil ? host.returnKeyLabel : nil }
     func contextBeforeInput(maximumCharacters: Int) -> String? { target.contextBeforeInput(maximumCharacters: maximumCharacters) }
     func contextAfterInput(maximumCharacters: Int) -> String? { target.contextAfterInput(maximumCharacters: maximumCharacters) }
     func insert(_ text: String) {

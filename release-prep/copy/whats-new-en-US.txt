@@ -1,3 +1,15 @@
-You can now support TabForge from Settings > Tip Jar in the companion app. Choose an optional one-time tip, with prices shown in your local currency. All app and keyboard features remain free to use.
+Autocorrect now weighs where you tapped and how common each word is, and leaves names used nearby in your text alone. It remains optional and off by default.
 
-You can also find Paper & Grain in Other Apps.
+A new option, Learn my tap positions, sharpens autocorrect over time. It is off by default, keeps only average tap offsets for each key on this device, and erases them when you turn it off.
+
+Hold a top-row letter to type its digit, or hold a symbol key to choose a related operator. Slide away to cancel.
+
+Choose which keys the toolbar shows in Layout & keys. In full layouts, Escape now comes first.
+
+Keys play the system click sound when Keyboard Clicks is on in iOS Settings, with a toggle to silence TabForge. Haptics now have Light, Medium and Strong strengths.
+
+The return key shows the app's label, such as Send or Search. In Code editor fields that ask for sentence capitals, Shift can turn on at sentence starts and a quick double Space can type a period.
+
+Swipe typing and suggestions share the new word list and can produce names already in your text.
+
+Rows fit short screens better, including a closed Duo, and the bottom keys follow rounded display corners. In tabletop pose, the editing row no longer repeats toolbar keys.

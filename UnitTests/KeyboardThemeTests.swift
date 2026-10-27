@@ -98,9 +98,9 @@ struct KeyboardThemeTests {
         let controls = toolbar.subviews.compactMap { $0 as? UIButton }.sorted { $0.frame.minX < $1.frame.minX }
         #expect(controls.count == 10)
         #expect(controls.map(\.accessibilityIdentifier) == [
-            "keyboard.arrow.left", "keyboard.arrow.down", "keyboard.arrow.up", "keyboard.arrow.right",
-            "keyboard.modifier.control", "keyboard.modifier.option", "keyboard.modifier.command",
-            "keyboard.deleteLine", "keyboard.escape", "keyboard.quickSettings"
+            "keyboard.escape", "keyboard.modifier.control", "keyboard.modifier.option", "keyboard.modifier.command",
+            "keyboard.deleteLine", "keyboard.arrow.left", "keyboard.arrow.down", "keyboard.arrow.up", "keyboard.arrow.right",
+            "keyboard.quickSettings"
         ])
         for button in controls {
             #expect(button.frame.width >= 30 && button.frame.height == 44)

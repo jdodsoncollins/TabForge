@@ -7,6 +7,7 @@ The compact-height and accessibility changes described below pass build 6's auto
 ## Implementation
 
 - Key caps retain their visual spacing. Their touch regions meet halfway across each gap, use deterministic boundaries, and stay inside keyboard safe areas. Expanded regions are checked against active fold/camera regions. No hit target extends outside the keyboard.
+- The full-layout toolbar follows a desktop arrangement: Escape at the leading edge, then Control, Option, Command, Delete line, the four arrows, and the tools/settings gear at the trailing edge.
 - In full layouts, toolbar controls are 44 points tall and have adjacent, non-overlapping hit targets. The 320-point viewport gives each toolbar control approximately 30 points of width before unusual safe-area or reserved-region constraints. Wider devices get larger targets. The toolbar is hidden in compact height.
 - Keys use `UIButton` tracking and commit on release inside their hit region. Outside/cancelled releases do not type. Controls do not use exclusive touch. A single control accepts one finger to avoid duplicate activations from two fingers on one key; separate controls remain independent.
 - Ctrl, Option and Command support tapping to latch the next key or holding for multiple keys. Each letter/arrow captures its modifiers at finger-down, so an early modifier release cannot alter the pending chord. Letters commit in finger-release order.

@@ -76,6 +76,10 @@ public enum KeySize: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum HapticStrength: String, Codable, CaseIterable, Sendable {
+    case light = "Light", medium = "Medium", strong = "Strong"
+}
+
 public enum KeyboardHeightMode: String, Codable, CaseIterable, Sendable {
     case automatic = "Automatic", compact = "Compact", full = "Full"
 }
@@ -141,6 +145,11 @@ public struct KeyboardSettings: Codable, Equatable, Sendable {
     public var swipeTyping = false
     public var cursorScrubbing = true
     public var haptics = true
+    private var selectedHapticStrength: HapticStrength?
+    public var hapticStrength: HapticStrength {
+        get { selectedHapticStrength ?? .light }
+        set { selectedHapticStrength = newValue == .light ? nil : newValue }
+    }
     public var keyPreviews = true
     public var showNumberRow = false
     private var extraEditingRow: Bool?

@@ -175,7 +175,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private var scrubTranslation: CGFloat = 0
     private var isScrubbing = false
     private var palette: KeyboardPalette = .resolve(.standard)
-    private let feedback = UISelectionFeedbackGenerator()
+    private var feedback: (generator: UIImpactFeedbackGenerator, strength: HapticStrength)?
     private var proseCorrector: ProseAutocorrector?
     private var correctionDocument: UUID?
     private var supplementaryProtectedWords: Set<String> = []
@@ -432,7 +432,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         key.addAction(UIAction { [weak self, weak key] _ in
             guard let self, let key else { return }
             self.beginPress(key)
-            if self.preferences.settings.haptics { self.feedback.selectionChanged() }
+            self.playKeyFeedback()
             self.showPreview(for: key)
             if key.action == .delete, self.keyPresses[ObjectIdentifier(key)]?.modifiers.isEmpty == true { self.startDeleting() }
         }, for: .touchDown)
@@ -461,7 +461,23 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         cancelledSnippetReleases.remove(button)
         return cancelled
     }
+    private func playKeyFeedback() {
+        let settings = preferences.settings
+        guard settings.haptics else { feedback = nil; return }
+        // Reuse one generator per strength rather than creating one per key.
+        if feedback?.strength != settings.hapticStrength {
+            let style: UIImpactFeedbackGenerator.FeedbackStyle = switch settings.hapticStrength {
+            case .light: .light
+            case .medium: .medium
+            case .strong: .heavy
+            }
+            feedback = (UIImpactFeedbackGenerator(style: style, view: self), settings.hapticStrength)
+        }
+        feedback?.generator.impactOccurred()
+        feedback?.generator.prepare()
+    }
     private func beginToolbarPress(_ button: UIButton, consumesModifiers: Bool = true) {
+        playKeyFeedback()
         let id = ObjectIdentifier(button)
         cancelledSnippetReleases.remove(button); activeKeyPresses.insert(id)
         keyPresses[id] = KeyPress(modifiers: modifiers, uppercase: false)
@@ -765,7 +781,9 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
 
     private var toolbarControls: [UIButton] {
-        navigationButtons + modifierButtons.map(\.0) + [deleteLineButton, escapeButton, gearButton]
+        // Desktop order: Escape at the leading edge, then modifiers, with the
+        // arrows toward the trailing side and settings last.
+        [escapeButton] + modifierButtons.map(\.0) + [deleteLineButton] + navigationButtons + [gearButton]
     }
 
     private func arrangeToolbar() {
@@ -1136,7 +1154,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 toggle("Key press previews", \.keyPreviews)
             ]),
             UIMenu(title: "Gestures & feedback", children: [
-                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Haptic feedback", \.haptics)
+                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Haptic feedback", \.haptics),
+                UIMenu(title: "Haptic strength", children: HapticStrength.allCases.map { strength in
+                    UIAction(title: strength.rawValue, attributes: settings.haptics ? [] : .disabled, state: settings.hapticStrength == strength ? .on : .off) { [weak self] _ in
+                        self?.preferences.settings.hapticStrength = strength; self?.applySettings()
+                    }
+                })
             ]),
             UIMenu(title: "Terminal · ANSI", image: UIImage(systemName: "terminal"), children: [
                 toggle("Return sends carriage return (CR)", \.terminalReturnIsCR),
@@ -1298,6 +1321,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         statusLabel.isHidden = true
         invalidateSwipeContext()
         swipeDecoder = nil
+        feedback = nil
         clearModifiers(); isScrubbing = false
         activeKeyPresses = []; keyPresses = [:]; shiftHeld = false; shiftUsed = false
         if needsKeyRebuild { needsKeyRebuild = false; rebuild() }

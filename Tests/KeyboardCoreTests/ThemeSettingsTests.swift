@@ -18,7 +18,19 @@ struct ThemeSettingsTests {
         #expect(older.language == .shell && older.theme == .nord)
     }
 
-    @Test func defaultsFollowIOSAppearance() {
+    @Test func hapticStrengthPersistsAndOlderRecordsDefaultToLight() throws {
+        var settings = KeyboardSettings()
+        #expect(settings.haptics && settings.hapticStrength == .light)
+        settings.hapticStrength = .strong
+        let data = try JSONEncoder().encode(settings)
+        #expect(try JSONDecoder().decode(KeyboardSettings.self, from: data).hapticStrength == .strong)
+        var record = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        record.removeValue(forKey: "selectedHapticStrength")
+        let older = try JSONDecoder().decode(KeyboardSettings.self, from: JSONSerialization.data(withJSONObject: record))
+        #expect(older.hapticStrength == .light)
+    }
+
+        @Test func defaultsFollowIOSAppearance() {
         let settings = KeyboardSettings()
         #expect(settings.theme == .standard)
         #expect(settings.appearance == .system)

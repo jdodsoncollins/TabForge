@@ -87,6 +87,21 @@ struct SettingsView: View {
                 )
                 .accessibilityIdentifier("settings.attribution.speech")
                 AttributionLink(
+                    title: "English Speller Database", detail: "Kevin Atkinson’s word list (formerly SCOWL) for swipe, autocorrect, and suggestions.",
+                    symbol: "character.book.closed", destination: URL(string: "https://github.com/en-wl/wordlist")!
+                )
+                .accessibilityIdentifier("settings.attribution.esdb")
+                AttributionLink(
+                    title: "SymSpell", detail: "English word frequencies from Wolf Garbe’s SymSpell, via symspellpy (MIT), used to rank corrections and swipe matches.",
+                    symbol: "chart.bar", destination: URL(string: "https://github.com/wolfgarbe/SymSpell")!
+                )
+                .accessibilityIdentifier("settings.attribution.symspell")
+                AttributionLink(
+                    title: "Google Books Ngram", detail: "The word counts behind those frequencies, under CC BY 3.0.",
+                    symbol: "books.vertical", destination: URL(string: "https://books.google.com/ngrams")!
+                )
+                .accessibilityIdentifier("settings.attribution.ngram")
+                AttributionLink(
                     title: "Nord", detail: "Colors adapted for the Nord keyboard theme.",
                     symbol: "paintpalette", destination: URL(string: "https://www.nordtheme.com")!
                 )
@@ -272,7 +287,8 @@ struct SmartInputInfoView: View {
     var body: some View {
         List {
             Section("Autocorrect prose") {
-                Text("Autocorrect is off by default. Enable it to check plain English words on device when you press Space. Press Delete immediately after a correction to restore what you typed.")
+                Text("Autocorrect is off by default. Enable it to check plain English words on device when you press Space. It weighs where you tapped and how common each word is, and leaves words already used in the surrounding text alone. Press Delete immediately after a correction to restore what you typed.")
+                Text("“Learn my tap positions” in the keyboard’s gear menu is a separate option, also off by default. When on, the keyboard keeps only the average offset of your taps on each letter key, on this device, to sharpen corrections. It never stores words or text, and turning it off erases what it learned.").foregroundStyle(.secondary)
                 Text("Autocorrect follows the app’s text-field settings. It stays inactive when the app disables correction, in URL, email, and numeric fields, in Terminal and Remote desktop profiles, and in TabForge’s code playground.").foregroundStyle(.secondary)
             }
             Section("Voice to code") {
@@ -280,11 +296,12 @@ struct SmartInputInfoView: View {
                 Text("The keyboard extension leaves iOS’s system dictation key enabled. If the host doesn’t show it, switch to the Apple keyboard with the globe. Extensions cannot record microphone audio directly.").foregroundStyle(.secondary)
             }
             Section("Swipe typing · beta") {
-                Text("Slide across letter keys to write English words and programming terms. Open the gear menu → Swipe alternatives to choose another match. The dictionary is bundled offline. Recognition remains experimental; names, arbitrary identifiers and other languages may need tap typing.")
+                Text("Slide across letter keys to write English words and programming terms. Open the gear menu → Swipe alternatives to choose another match. The dictionary is bundled offline, and names already used in the text around the cursor can be swiped in their own spelling. Recognition remains experimental; other identifiers and other languages may need tap typing.")
+                Text("When iOS reports little free memory for the keyboard, it turns swipe off first and then the bundled word list, rather than risk being closed.").foregroundStyle(.secondary)
             }
             Section("Apple Intelligence") {
                 Text("The playground’s native text editor allows system Writing Tools through the text selection menu on supported devices. Availability depends on your device, language, and Apple Intelligence settings. Review generated changes carefully when working with source code.")
-                Text("Apple doesn’t expose its QuickPath swipe decoder to third-party keyboards. TabForge uses its own geometric decoder and an included English dictionary. It does not download a model or learn from your typing.").foregroundStyle(.secondary)
+                Text("Apple doesn’t expose its QuickPath swipe decoder to third-party keyboards. TabForge uses its own geometric decoder and an included English dictionary. It does not download a model, and it learns only tap positions, only if you turn that on.").foregroundStyle(.secondary)
             }
         }.navigationTitle("Smart input").navigationBarTitleDisplayMode(.inline)
     }

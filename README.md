@@ -44,6 +44,7 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 - Code editor, Terminal · ANSI and literal Remote desktop profiles. Host/client support determines which control sequences work.
 - Optional conservative English prose autocorrect using Apple's public spelling service and supplementary lexicon. It defaults off, respects eligible host fields and skips code-like input. Space commits; immediate Delete restores the original spelling.
 - Opt-in experimental swipe recognition over a bundled English and programming vocabulary, and companion voice-to-code with transcript review.
+- Opt-in English autocorrect that weighs where each key was tapped and how common each word is, with optional on-device tap learning that stores only per-key offsets.
 - Native playground selection, undo, syntax highlighting, line numbers and system Writing Tools where supported.
 - Keyboard accessibility labels/state, overlapping key handling, Bold Text and Dynamic Type in settings. Physical assistive-technology and touch coverage has limits documented below.
 
@@ -103,7 +104,7 @@ Choose an installed simulator with `xcrun simctl list devices available`. Core t
 
 Extensions cannot record microphone audio. iOS controls system dictation availability. The companion voice feature requires explicit microphone/Speech permissions and downloaded on-device English support. System Writing Tools and Dictation follow Apple's own availability and privacy rules.
 
-Swipe is experimental. Its offline dictionary includes 38,604 English word forms plus programming terms; arbitrary identifiers and other languages may need tap typing. Apple's QuickPath decoder is not a public dependency. [Research](docs/swipe-engine-research-2026-10-17.md) covers possible replacements and their separate code, data and model licenses; none of those engines is integrated. [Dictionary provenance and reproduction](docs/swipe-lexicon.md) document the bundled English data.
+Swipe is experimental. Its offline dictionary includes 38,604 English word forms plus programming terms, ranked by bundled word frequencies, and it can also produce names already used near the cursor; other identifiers and other languages may need tap typing. Apple's QuickPath decoder is not a public dependency. [Research](docs/swipe-engine-research-2026-10-17.md) covers possible replacements and their separate code, data and model licenses; none of those engines is integrated. [Dictionary provenance and reproduction](docs/swipe-lexicon.md) and [frequency provenance](docs/word-frequency.md) document the bundled English data.
 
 UIKit controls preserve cancellation, release-inside behavior, expanded hit regions, overlapping presses and modifier snapshots. Apple's private keyboard touch classifier is unavailable. Physical palm/edge rejection, full assistive-technology typing, floating/Split View keyboards, terminal forwarding and sustained extension memory pressure require device checks. iOS can terminate any keyboard extension.
 

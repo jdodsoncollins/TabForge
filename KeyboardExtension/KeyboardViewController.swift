@@ -63,6 +63,7 @@ final class KeyboardViewController: UIInputViewController {
         keyboard.applySettings()
         // Reopening can attach to a different field without a settings change.
         keyboard.hostContextDidChange()
+        keyboard.prepareLanguageResources()
         prepareAutocorrection()
     }
     override func viewDidAppear(_ animated: Bool) {
@@ -97,7 +98,8 @@ final class KeyboardViewController: UIInputViewController {
     }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        keyboard?.releaseTransientResources()
+        // Also lowers the optional language features for the rest of this process.
+        keyboard?.handleMemoryWarning()
         lexiconTask?.cancel(); lexiconTask = nil
     }
     private func prepareAutocorrection() {

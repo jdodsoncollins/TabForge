@@ -1,6 +1,6 @@
 # TabForge Privacy Policy
 
-Last updated October 21, 2026. Questions about this policy can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net).
+Last updated October 27, 2026. Questions about this policy can be sent to [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net).
 
 TabForge's app and keyboard contain no analytics, advertising, account system, or TabForge-operated networking service. The optional companion Tip Jar uses Apple's StoreKit service as described below. The keyboard does not send keystrokes, surrounding text, snippets, swipe gestures, or spelling requests to a TabForge server. The code is available for inspection under the repository's [MIT license](https://github.com/jdodsoncollins/TabForge/blob/main/LICENSE).
 
@@ -10,9 +10,11 @@ This document describes TabForge's implementation. It does not describe the data
 
 The extension receives text and field information that iOS and the host app expose through `UITextDocumentProxy`. It uses this context for local editing, indentation, completions, cursor movement, and optional spelling correction. The host can limit or withhold context. TabForge does not build a keystroke history or save the host document.
 
-The optional swipe recognizer uses fixed, bundled English and programming vocabularies. TabForge does not download words or learn from typing. Gesture traces and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
+The optional swipe recognizer, autocorrect, and English suggestions use fixed, bundled English and programming vocabularies with word frequencies. TabForge does not download words or add typed words to them. To rank corrections, suggestions, and swipe matches, the keyboard also reads words from the text the host exposes around the cursor; that list is kept only in memory and never saved. Gesture traces, tap points, and alternatives are transient; they are not uploaded or used to train a model. Swipe is experimental and off by default.
 
-Optional English prose correction uses Apple's `UITextChecker` on the device. When enabled, the extension can request Apple's supplementary keyboard lexicon, which may include names and text-shortcut entries. TabForge keeps a bounded set in memory to avoid correcting those words; it does not save or log that lexicon. Spelling resources, correction state, swipe traces, repeat tasks, and held-key state are released when the keyboard is dismissed or receives a memory warning. Ordinary operating-system memory management still applies; this is not a secure-memory-erasure guarantee.
+Optional English prose correction uses Apple's `UITextChecker` on the device to decide which words are misspelled. Replacements are chosen on the device from the bundled vocabulary and nearby document words, weighing where each key was tapped. Tap points for the word being typed are held in memory until Space and then discarded. When enabled, the extension can request Apple's supplementary keyboard lexicon, which may include names and text-shortcut entries. TabForge keeps a bounded set in memory to avoid correcting those words; it does not save or log that lexicon. Spelling resources, correction state, swipe traces, repeat tasks, and held-key state are released when the keyboard is dismissed or receives a memory warning. Ordinary operating-system memory management still applies; this is not a secure-memory-erasure guarantee.
+
+**Learn my tap positions** is a separate keyboard option, off by default and available only with autocorrect. When turned on, the keyboard keeps a running average of how far your taps land from the center of each letter key, plus a capped count of taps per key, and uses it to judge future taps. It records only from words already in its vocabulary that you typed and kept. It stores no letters in order, words, text, or timestamps. The averages are saved in the keyboard extension's local `UserDefaults` and never leave the device. Turning the option off erases them.
 
 ## What is saved on the device
 
@@ -20,6 +22,7 @@ Optional English prose correction uses Apple's `UITextChecker` on the device. Wh
 | --- | --- | --- |
 | Keyboard preferences | Restore layout, profile, theme, and editing choices | The keyboard extension's local `UserDefaults` |
 | Custom snippets | Insert text the user intentionally saves | Stored with the keyboard extension's preferences |
+| Learned tap offsets (optional, off by default) | Per-letter-key average tap offset and capped sample count, to improve autocorrect | The keyboard extension's local `UserDefaults`; erased when the option is turned off |
 | Companion playground draft | Restore the playground between launches | The app's local `UserDefaults` |
 
 The extension's typing context is separate from the companion playground draft. Text entered or inserted into the playground is deliberately saved, including a voice transcript after the user inserts it. Do not put secrets in drafts or snippets.
@@ -28,7 +31,7 @@ The companion's keyboard and layout previews use a separate, in-memory set of se
 
 These records use the iOS application sandbox and the device's normal storage protections. TabForge adds no separate encryption or password protection to preferences, snippets, or drafts. Device backups and operating-system retention rules may apply.
 
-Resetting keyboard preferences in the keyboard clears its current settings and custom snippets; it does not clear the companion playground draft. Delete or replace the playground text separately. Removing the app and keyboard removes their installed containers subject to iOS behavior; backups may retain prior data.
+Resetting keyboard preferences in the keyboard clears its current settings and custom snippets, and turns tap learning off, which erases learned offsets; it does not clear the companion playground draft. Delete or replace the playground text separately. Removing the app and keyboard removes their installed containers subject to iOS behavior; backups may retain prior data.
 
 ## No Full Access or shared container
 

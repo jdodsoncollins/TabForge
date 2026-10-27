@@ -1,6 +1,6 @@
 # Third-party notices and asset provenance
 
-TabForge's original code and documentation are available under the [MIT license](LICENSE). The upstream notices below apply to the identified palette and dictionary material and must be retained when redistributing it. TabForge's license does not replace Apple's platform terms or grant rights in third-party names and trademarks.
+TabForge's original code and documentation are available under the [MIT license](LICENSE). The upstream notices below apply to the identified palette, dictionary, and word-frequency material and must be retained when redistributing it. TabForge's license does not replace Apple's platform terms or grant rights in third-party names and trademarks.
 
 The app currently has no third-party package dependency. Its Swift package dependency is the local `KeyboardCore` target. The app uses Apple's system frameworks rather than bundling their implementations.
 
@@ -80,7 +80,7 @@ The product names and icons identify Jeremy Collins’s apps and remain the deve
 
 ## English swipe vocabulary
 
-`Sources/KeyboardCore/Resources/swipe-english.txt` includes 38,604 generated word forms from Kevin Atkinson's English Speller Database (ESDB), formerly SCOWL. This data has the permission notice below; TabForge's MIT license does not replace it. The pinned source, checksum, filtering, and reproducible importer are documented in [the vocabulary provenance](docs/swipe-lexicon.md). The keyboard uses this bundled resource offline; it does not download dictionaries or learn from typing.
+`Sources/KeyboardCore/Resources/swipe-english.txt` includes 38,604 generated word forms from Kevin Atkinson's English Speller Database (ESDB), formerly SCOWL. This data has the permission notice below; TabForge's MIT license does not replace it. The pinned source, checksum, filtering, and reproducible importer are documented in [the vocabulary provenance](docs/swipe-lexicon.md). The keyboard uses this bundled resource offline; it does not download dictionaries or add typed words to it.
 
 ```text
 Copyright 2000-2026 by Kevin Atkinson
@@ -103,6 +103,35 @@ are in the Public Domain, but Alan Beale <biljir@pobox.com> deserves special
 credit as he is the author of 12dicts and a major contributor to ENABLE2K.  In
 addition, he gave me an incredible amount of feedback and created a number of
 special lists in order to help improve the overall quality of ESDB.
+```
+
+## English word frequencies
+
+`Sources/KeyboardCore/Resources/english-frequency.txt` assigns rounded Zipf frequencies to 35,129 of the bundled ESDB words. The values come from `frequency_dictionary_en_82_765.txt` in [SymSpell](https://github.com/wolfgarbe/SymSpell), as packaged in [symspellpy](https://github.com/mammothb/symspellpy) 6.9.0, which is distributed under the MIT license below. SymSpell credits the underlying counts to the [Google Books Ngram](https://books.google.com/ngrams) data under [Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/); TabForge reduced them to rounded Zipf values. Google does not sponsor or endorse TabForge. The pinned source, checksums, and reproducible importer are documented in [the frequency provenance](docs/word-frequency.md). No package code is bundled.
+
+```text
+MIT License
+
+Copyright (c) 2025 mmb L (Python port https://github.com/mammothb/symspellpy)
+Copyright (c) 2021 Wolf Garbe (Original C# implementation https://github.com/wolfgarbe/SymSpell)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ## Researched swipe alternatives

@@ -19,6 +19,8 @@ private final class KeyButton: UIButton {
     let action: KeyAction
     let weight: CGFloat
     var touchFrame = CGRect.zero
+    /// Where the current touch began, in the keyboard view's coordinates.
+    private(set) var touchDownPoint: CGPoint?
     let legend = UILabel()
     let hint = UILabel()
     var baseColor: UIColor
@@ -62,6 +64,10 @@ private final class KeyButton: UIButton {
         self.hint.isAccessibilityElement = false
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        touchDownPoint = superview.map { touch.location(in: $0) }
+        return super.beginTracking(touch, with: event)
+    }
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         guard let superview, !touchFrame.isEmpty else { return super.point(inside: point, with: event) }
         return touchFrame.contains(convert(point, to: superview))
@@ -165,7 +171,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private var previewLabel: UILabel?
     private var swipeTrace: [SwipePoint] = []
     private var swipePath = UIBezierPath()
-    private var swipeDecoder: SwipeDecoder?
+    /// The bundled word list and swipe index, loaded when memory allows.
+    let language = LanguageResources()
+    /// Optional per-key tap offsets; empty unless the person turns learning on.
+    private var touchAdaptation = TouchAdaptation()
+    private var touchAdaptationLoaded = false
+    private var unsavedTouchSamples = 0
     @MainActor private struct SwipeAnchor {
         let identifier: UUID?
         let before: String?
@@ -226,7 +237,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 self.proseCorrector = ProseAutocorrector(protectedWords: self.supplementaryProtectedWords)
                 self.correctionDocument = identifier
             }
-            return self.proseCorrector?.correction(for: word)
+            return self.correction(for: word)
+        }
+        language.onChange = { [weak self] in
+            guard let self else { return }
+            self.engine.lexicon = self.language.lexicon
         }
         accessibilityIdentifier = "keyboard.surface"
         accessibilityValue = layout.rawValue
@@ -408,10 +423,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // when no preference changed; text/selection events refresh context.
         guard preferences.settings != lastSettings else { return }
         invalidateSwipeContext()
-        if lastSettings?.language != preferences.settings.language ||
-            !preferences.settings.swipeTyping || !preferences.settings.smartEditingEnabled {
-            swipeDecoder = nil
+        if !preferences.settings.learnTapPositions {
+            touchAdaptation = TouchAdaptation(); unsavedTouchSamples = 0
+            if lastSettings?.learnTapPositions == true { preferences.eraseTouchAdaptation() }
         }
+        if !preferences.settings.swipeTyping || !preferences.settings.smartEditingEnabled { language.dropSwipeIndex() }
+        if !preferences.settings.swipeTyping && !preferences.settings.autocorrectProse { language.release() }
         engine.invalidateAutocorrection()
         if !preferences.settings.autocorrectProse {
             proseCorrector = nil; correctionDocument = nil; supplementaryProtectedWords = []
@@ -502,7 +519,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 self.endModifier(modifier, cancelled: false)
             } else {
                 let press = self.keyPresses[ObjectIdentifier(key)]
-                self.perform(key.action, capturedModifiers: press?.modifiers, capturedUppercase: press?.uppercase)
+                self.perform(key.action, capturedModifiers: press?.modifiers, capturedUppercase: press?.uppercase,
+                             touch: self.tapPoint(key))
             }
             self.finishPress(key)
         }, for: .touchUpInside)
@@ -1119,7 +1137,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
     }
 
-    private func perform(_ action: KeyAction, capturedModifiers: KeyboardModifiers? = nil, capturedUppercase: Bool? = nil) {
+    private func perform(_ action: KeyAction, capturedModifiers: KeyboardModifiers? = nil, capturedUppercase: Bool? = nil,
+                         touch: SwipePoint? = nil) {
         defer { completePendingSnippetAction() }
         if isEditingSnippet {
             if action == .enter, snippetDraft?.editingName == true { selectSnippetField(name: false); return }
@@ -1171,7 +1190,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             }
         } else {
             switch action {
-            case .text(let text): engine.type(outputText(text))
+            case .text(let text): engine.type(outputText(text), touch: touch)
             case .delete: engine.backspace()
             case .line: performLineAction()
             case .tab: engine.tab()
@@ -1242,6 +1261,71 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         displayedSwipeGeneration = generation
         updateCombinedMenu()
     }
+    /// Loads the bundled word list in the background when a feature needs it.
+    func prepareLanguageResources() {
+        let settings = preferences.settings
+        guard !isEditingSnippet, settings.smartEditingEnabled, settings.autocorrectProse || settings.swipeTyping else { return }
+        language.prepare()
+    }
+
+    /// Frees the word list and swipe index, and lowers the features allowed
+    /// for the rest of this process. Called on a system memory warning.
+    func handleMemoryWarning() {
+        language.memoryWarning()
+        releaseTransientResources()
+    }
+
+    /// A key's touch-down point in the same width-normalized space as
+    /// `swipeKeyCenters()`. Kept only while the current word is tracked.
+    private func tapPoint(_ key: KeyButton) -> SwipePoint? {
+        guard bounds.width > 0, let point = key.touchDownPoint, key.superview === self else { return nil }
+        return SwipePoint(x: Double(point.x / bounds.width), y: Double(point.y / bounds.width))
+    }
+
+    /// The system spelling checker decides which words are misspelled. When the
+    /// bundled list is loaded, the replacement is chosen from it and the
+    /// document's own words by tap position and frequency; otherwise from the
+    /// checker's guesses, as before.
+    private func correction(for word: String) -> String? {
+        guard let prose = proseCorrector else { return nil }
+        guard language.tier >= .standard else { language.release(); return prose.correction(for: word) }
+        guard let lexicon = language.lexicon else { language.prepare(); return prose.correction(for: word) }
+        let corrector = TouchCorrector(lexicon: lexicon)
+        let document = engine.documentVocabulary()
+        let geometry = KeyGeometry(centers: swipeKeyCenters())
+        let touches = geometry == nil ? [] : engine.correctionTouches
+        if corrector.isKnown(word, document: document) {
+            if let geometry { learnTaps(word, touches: touches, geometry: geometry) }
+            return nil
+        }
+        guard prose.isMisspelled(word) else { return nil }
+        return corrector.correction(for: word, touches: touches, geometry: geometry ?? .qwerty,
+                                    adaptation: currentTouchAdaptation(), document: document)
+    }
+
+    private func currentTouchAdaptation() -> TouchAdaptation? {
+        guard preferences.settings.learnTapPositions else { return nil }
+        if !touchAdaptationLoaded { touchAdaptation = preferences.loadTouchAdaptation(); touchAdaptationLoaded = true }
+        return touchAdaptation
+    }
+
+    /// With learning on, a listed word accepted as typed confirms which key
+    /// each tap meant. Only per-key average offsets are kept, never the word.
+    private func learnTaps(_ word: String, touches: [SwipePoint?], geometry: KeyGeometry) {
+        guard touches.count == word.count, currentTouchAdaptation() != nil else { return }
+        for (letter, touch) in zip(word, touches) {
+            if let touch { touchAdaptation.record(letter: letter, touch: touch, geometry: geometry) }
+        }
+        unsavedTouchSamples += 1
+        if unsavedTouchSamples >= 20 { saveTouchAdaptation() }
+    }
+
+    private func saveTouchAdaptation() {
+        guard unsavedTouchSamples > 0, touchAdaptationLoaded else { return }
+        preferences.saveTouchAdaptation(touchAdaptation)
+        unsavedTouchSamples = 0
+    }
+
     /// Use iOS's keyboard lexicon to leave names and text-shortcut inputs alone.
     /// Keep only bounded words in memory; never persist or log the lexicon.
     func useSupplementaryLexicon(_ lexicon: UILexicon) {
@@ -1378,7 +1462,15 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                     self.showStatus("Autocorrect is unavailable in this field")
                 }
             }
+        let tapLearning = UIAction(title: "Learn my tap positions",
+            attributes: settings.smartEditingEnabled && settings.autocorrectProse ? [] : .disabled,
+            state: settings.learnTapPositions ? .on : .off) { [weak self] _ in
+                guard let self else { return }
+                self.preferences.settings.learnTapPositions.toggle()
+                self.applySettings()
+            }
         autocorrect.subtitle = "On Space in supported prose fields. Delete immediately to undo."
+        tapLearning.subtitle = "Sharpens autocorrect. Stays on this device; turning it off erases it."
         let enabledToolbarKeys = settings.toolbarKeys
         let toolbarKeys = UIMenu(title: "Toolbar keys", children: ToolbarKey.allCases.map { key in
             let on = enabledToolbarKeys.contains(key)
@@ -1434,7 +1526,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             }),
             UIMenu(title: "Editing preferences", image: UIImage(systemName: "text.cursor"), children: [
                 toggle("Pair brackets & quotes", \.autoPair), toggle("Skip existing closing delimiter", \.skipClosingDelimiter),
-                toggle("Automatic indentation", \.smartIndent), toggle("Code suggestions", \.suggestions), autocorrect,
+                toggle("Automatic indentation", \.smartIndent), toggle("Code suggestions", \.suggestions), autocorrect, tapLearning,
                 toggle("Auto-capitalization", \.autoCapitalize), toggle("“.” shortcut", \.periodShortcut),
                 toggle("Swipe typing · beta", \.swipeTyping)
             ]),
@@ -1606,7 +1698,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private func stopDeleting() { deleteTask?.cancel(); deleteTask = nil }
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        if window == nil { releaseTransientResources() }
+        if window == nil { releaseTransientResources() } else { prepareLanguageResources() }
     }
     /// The keyboard process may stay alive after dismissal. Keep only its small
     /// reusable key grid and saved preferences, not gesture or timer state.
@@ -1627,7 +1719,9 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         statusTask?.cancel(); statusTask = nil
         statusLabel.isHidden = true
         invalidateSwipeContext()
-        swipeDecoder = nil
+        saveTouchAdaptation()
+        touchAdaptation = TouchAdaptation(); touchAdaptationLoaded = false
+        language.release()
         feedback = nil
         clearModifiers(); isScrubbing = false
         activeKeyPresses = []; keyPresses = [:]; shiftHeld = false; shiftUsed = false
@@ -1744,10 +1838,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                   swipeAnchor?.matches(engine.document) == true else { invalidateSwipeContext(); return }
             engine.invalidateAutocorrection()
             swipeTrace.append(normalized)
-            if swipeDecoder == nil {
-                swipeDecoder = SwipeDecoder(words: SwipeDecoder.vocabulary + preferences.settings.language.keywords)
+            guard let decoder = language.swipeDecoder() else {
+                showStatus("Swipe is paused to save memory")
+                invalidateSwipeContext(); return
             }
-            let candidates = swipeDecoder?.candidates(trace: swipeTrace, centers: centers) ?? []
+            let candidates = decoder.candidates(trace: swipeTrace, centers: centers, document: engine.documentVocabulary())
             if let word = candidates.first {
                 let prefix = engine.document.contextBeforeInput(maximumCharacters: 1)?.last
                 if prefix?.isLetter == true || prefix?.isNumber == true { engine.document.insert(" ") }

@@ -300,7 +300,8 @@ struct KeyboardCompactLayoutTests {
         #expect(try !button("q", in: tall).subviews.compactMap { ($0 as? UILabel)?.text }.contains("1"))
         #expect(tall.desiredHeight > short.desiredHeight)
         let shortRow = try button("q", in: short).frame.height
-        #expect(shortRow >= 40 && shortRow < (try button("q", in: tall).frame.height))
+        let tallRow = try button("q", in: tall).frame.height
+        #expect(shortRow >= 40 && shortRow < tallRow)
     }
 
     @Test func holdingATopRowLetterTypesItsHintedDigit() async throws {

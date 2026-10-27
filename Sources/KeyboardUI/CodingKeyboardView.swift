@@ -570,12 +570,19 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Stay within the safe area and on the key's side of any fold.
         let row = CGRect(x: safeAreaInsets.left + 2, y: key.frame.minY, width: max(0, bounds.width - safeAreaInsets.left - safeAreaInsets.right - 4), height: key.frame.height)
         let area = usableSegments(in: row).first { $0.minX <= key.frame.midX && key.frame.midX <= $0.maxX } ?? row
+        var options = options
         var x = max(area.minX, min(area.maxX - width, key.frame.midX - cellWidth / 2))
         var y = key.frame.minY - height - 4
-        if y < safeAreaInsets.top + snippetPanelHeight {
+        let top = safeAreaInsets.top + snippetPanelHeight
+        if key.frame.minY - height >= top {
+            y = max(top, y)
+        } else if key.frame.maxX + 4 + width <= area.maxX {
             // No room above (compact height): sit beside the key instead of over it.
-            y = key.frame.minY
-            x = key.frame.maxX + 4 + width <= area.maxX ? key.frame.maxX + 4 : max(area.minX, key.frame.minX - 4 - width)
+            y = key.frame.minY; x = key.frame.maxX + 4
+        } else {
+            // On the key's left, mirror the order so the first entry stays nearest.
+            y = key.frame.minY; x = max(area.minX, key.frame.minX - 4 - width)
+            options.reverse()
         }
         let container = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
         container.backgroundColor = palette.key

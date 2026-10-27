@@ -576,6 +576,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         let top = safeAreaInsets.top + snippetPanelHeight
         if key.frame.minY - height >= top {
             y = max(top, y)
+            if key.frame.midX - cellWidth / 2 + width > area.maxX {
+                // Near the trailing edge, grow leftward so the first entry stays
+                // over the key and a plain hold always picks it.
+                options.reverse()
+                x = max(area.minX, key.frame.midX + cellWidth / 2 - width)
+            }
         } else if key.frame.maxX + 4 + width <= area.maxX {
             // No room above (compact height): sit beside the key instead of over it.
             y = key.frame.minY; x = key.frame.maxX + 4

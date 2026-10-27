@@ -82,7 +82,7 @@ private final class KeyButton: UIButton {
 
 /// Shared by the real keyboard extension and the app's editable playground.
 @MainActor
-final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
+final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputViewAudioFeedback {
     let preferences: PreferencesStore
     let engine: EditingEngine
     private let documentRouter: KeyboardDocumentRouter
@@ -461,8 +461,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         cancelledSnippetReleases.remove(button)
         return cancelled
     }
+    var enableInputClicksWhenVisible: Bool { preferences.settings.keyClicks }
     private func playKeyFeedback() {
         let settings = preferences.settings
+        if settings.keyClicks { UIDevice.current.playInputClick() }
         guard settings.haptics else { feedback = nil; return }
         // Reuse one generator per strength rather than creating one per key.
         if feedback?.strength != settings.hapticStrength {
@@ -1154,7 +1156,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 toggle("Key press previews", \.keyPreviews)
             ]),
             UIMenu(title: "Gestures & feedback", children: [
-                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Haptic feedback", \.haptics),
+                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Key click sounds", \.keyClicks), toggle("Haptic feedback", \.haptics),
                 UIMenu(title: "Haptic strength", children: HapticStrength.allCases.map { strength in
                     UIAction(title: strength.rawValue, attributes: settings.haptics ? [] : .disabled, state: settings.hapticStrength == strength ? .on : .off) { [weak self] _ in
                         self?.preferences.settings.hapticStrength = strength; self?.applySettings()

@@ -150,6 +150,13 @@ public struct KeyboardSettings: Codable, Equatable, Sendable {
         get { selectedHapticStrength ?? .light }
         set { selectedHapticStrength = newValue == .light ? nil : newValue }
     }
+    private var keyClickSounds: Bool?
+    /// Plays the system keyboard click, which also follows the user's
+    /// Sounds › Keyboard Clicks setting and needs no Full Access.
+    public var keyClicks: Bool {
+        get { keyClickSounds ?? true }
+        set { keyClickSounds = newValue ? nil : false }
+    }
     public var keyPreviews = true
     public var showNumberRow = false
     private var extraEditingRow: Bool?

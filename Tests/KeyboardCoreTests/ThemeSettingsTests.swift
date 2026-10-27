@@ -28,6 +28,9 @@ struct ThemeSettingsTests {
         record.removeValue(forKey: "selectedHapticStrength")
         let older = try JSONDecoder().decode(KeyboardSettings.self, from: JSONSerialization.data(withJSONObject: record))
         #expect(older.hapticStrength == .light)
+        #expect(older.keyClicks)
+        settings.keyClicks = false
+        #expect(try !JSONDecoder().decode(KeyboardSettings.self, from: JSONEncoder().encode(settings)).keyClicks)
     }
 
     @Test func defaultsFollowIOSAppearance() {

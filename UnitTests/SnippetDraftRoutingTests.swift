@@ -91,6 +91,7 @@ struct SnippetDraftRoutingTests {
             ("Key press previews", \KeyboardSettings.keyPreviews),
             ("Drag space to move cursor", \KeyboardSettings.cursorScrubbing),
             ("Hold Delete to repeat", \KeyboardSettings.repeatDelete),
+            ("Key click sounds", \KeyboardSettings.keyClicks),
             ("Haptic feedback", \KeyboardSettings.haptics),
             ("Return sends carriage return (CR)", \KeyboardSettings.terminalReturnIsCR),
             ("Delete sends DEL instead of BS", \KeyboardSettings.terminalDeleteIsDEL),

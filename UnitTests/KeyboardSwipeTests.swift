@@ -223,6 +223,7 @@ struct KeyboardSwipeTests {
         let preferences = PreferencesStore(local: nil)
         preferences.settings.swipeTyping = true
         preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
         let host = EditorHostView(preferences: preferences, openSettings: {})
         let controller = UIViewController()
         controller.view = host
@@ -326,6 +327,7 @@ struct KeyboardSwipeTests {
         let preferences = PreferencesStore(local: nil)
         preferences.settings.swipeTyping = true
         preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
         let document = ObservedDocument()
         let keyboard = CodingKeyboardView(document: document, preferences: preferences)
         layout(keyboard, in: host)

@@ -1,5 +1,7 @@
 # App Store readiness
 
+Submitted October 27, 2026: version 1.1.0 (18), built from PR #4 commit `cb209ae`. App Store Connect received it at 16:33 UTC and the version is WAITING_FOR_REVIEW, with release type AFTER_APPROVAL. Build 18 is VALID with no non-exempt encryption, and the existing internal TestFlight group has it with the [build 18 notes](copy/testflight-build18-en-US.txt). What's New, Description and App Review notes come from `copy/` and read back exactly; keywords, promotional text, URLs, the five screenshot sets and three App Previews are unchanged from 1.0.1. The Data Not Collected label still applies, since optional tap learning stays on the device. Core `swift test` passed 109 of 109, hosted unit tests 120 of 120 on iPad and on Duo, and the phone suite 134 passed with 3 skipped by design (run on `f17e0dd`, the same code). All 24 release-audit checks passed on the signed IPA. Version 1.0.1 (15) stays live until approval. The October 21 entries below are history.
+
 Submitted October 21, 2026: version 1.0.1 (15) and all five consumable tips. The version, parent review and each tip are WAITING_FOR_REVIEW, with release type AFTER_APPROVAL. Submission succeeded with zero blockers. Build 15 remains VALID and available to the existing internal TestFlight group; all 22 focused simulator checks and 24 artifact checks passed. Version 1.0 (12) remains live while the update awaits review.
 
 ## Candidate state

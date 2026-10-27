@@ -139,11 +139,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         let options: [String]
         let view: UIView
         let labels: [UILabel]
-        var selected = 0
+        /// Nil once the finger slides well away; releasing then cancels.
+        var selected: Int? = 0
     }
     private var alternatesPopup: AlternatesPopup?
     private var alternatesTask: Task<Void, Never>?
     private var alternatesKey: ObjectIdentifier?
+    /// The latest drag position of the key waiting on or showing alternates.
+    private var alternatesTouch: CGPoint?
     private var latchedModifiers: KeyboardModifiers = []
     private var heldModifiers: KeyboardModifiers = []
     private var usedHeldModifiers: KeyboardModifiers = []
@@ -489,10 +492,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             guard let self, let key else { return }
             if self.consumeCancelledSnippetRelease(key) { self.finishPress(key); return }
             self.hidePreview()
-            if let alternate = self.takeAlternate(for: key) {
-                self.perform(.text(alternate), capturedModifiers: [], capturedUppercase: false)
-                self.finishPress(key); return
-            }
+            if self.finishAlternates(for: key) { return }
             if key.action == .shift {
                 self.shiftHeld = false
                 if !self.shiftUsed { self.perform(.shift) }
@@ -521,10 +521,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         key.addAction(UIAction { [weak self, weak key] _ in
             guard let self, let key else { return }
             // Sliding onto the alternates callout leaves the key's own area.
-            if !self.consumeCancelledSnippetRelease(key), let alternate = self.takeAlternate(for: key) {
-                self.perform(.text(alternate), capturedModifiers: [], capturedUppercase: false)
-                self.finishPress(key); return
-            }
+            if !self.consumeCancelledSnippetRelease(key), self.finishAlternates(for: key) { return }
             self.cancelPress(key)
         }, for: .touchUpOutside)
         key.addTarget(self, action: #selector(keyDragged(_:event:)), for: [.touchDragInside, .touchDragOutside])
@@ -550,7 +547,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
 
     /// Holding a key with alternates shows a callout; sliding picks one.
     private func scheduleAlternates(for key: KeyButton) {
-        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil
+        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil; alternatesTouch = nil
         guard case .text(let text) = key.action, keyPresses[ObjectIdentifier(key)]?.modifiers.isEmpty == true else { return }
         let options = KeyAlternates.alternates(for: text)
         guard !options.isEmpty else { return }
@@ -619,9 +616,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Preselect the entry under the finger, even when the callout shifted to fit.
         let underKey = Int(((key.frame.midX - x) / cellWidth).rounded(.down))
         selectAlternate(min(max(underKey, 0), options.count - 1))
+        // A callout that opens after the finger already slid away selects nothing.
+        if let alternatesTouch, alternateIndex(at: alternatesTouch) == nil { selectAlternate(nil) }
         if preferences.settings.haptics { feedback?.generator.impactOccurred(intensity: 0.6) }
     }
-    private func selectAlternate(_ index: Int) {
+    private func selectAlternate(_ index: Int?) {
         guard var popup = alternatesPopup else { return }
         popup.selected = index
         alternatesPopup = popup
@@ -631,17 +630,35 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
     }
     @objc private func keyDragged(_ sender: UIControl, event: UIEvent) {
-        guard let popup = alternatesPopup, popup.key === sender,
+        guard alternatesKey == ObjectIdentifier(sender) || alternatesPopup?.key === sender,
               let touch = event.touches(for: sender)?.first else { return }
-        let cell = popup.view.frame.width / CGFloat(popup.options.count)
-        let index = Int(((touch.location(in: self).x - popup.view.frame.minX) / cell).rounded(.down))
-        let clamped = min(max(index, 0), popup.options.count - 1)
-        if clamped != popup.selected { selectAlternate(clamped) }
+        let location = touch.location(in: self)
+        alternatesTouch = location
+        guard let popup = alternatesPopup, popup.key === sender else { return }
+        let index = alternateIndex(at: location)
+        if index != popup.selected { selectAlternate(index) }
     }
-    private func takeAlternate(for key: KeyButton) -> String? {
-        guard let popup = alternatesPopup, popup.key === key else { return nil }
+    /// The callout entry under a point, or nil when the point is well away
+    /// from both the held key and its callout.
+    private func alternateIndex(at location: CGPoint) -> Int? {
+        guard let popup = alternatesPopup, let key = popup.key else { return nil }
+        let cell = popup.view.frame.width / CGFloat(popup.options.count)
+        guard popup.view.frame.union(key.frame).insetBy(dx: -cell / 2, dy: -cell / 2).contains(location) else { return nil }
+        let index = Int(((location.x - popup.view.frame.minX) / cell).rounded(.down))
+        return min(max(index, 0), popup.options.count - 1)
+    }
+    /// Ends a hold whose callout is open: types the selected entry, or cancels
+    /// when nothing is selected. Returns false when no callout is open.
+    private func finishAlternates(for key: KeyButton) -> Bool {
+        guard let popup = alternatesPopup, popup.key === key else { return false }
         hideAlternates()
-        return popup.options[popup.selected]
+        if let selected = popup.selected {
+            perform(.text(popup.options[selected]), capturedModifiers: [], capturedUppercase: false)
+            finishPress(key)
+        } else {
+            cancelPress(key)
+        }
+        return true
     }
     private func hideAlternates() {
         alternatesPopup?.view.removeFromSuperview(); alternatesPopup = nil
@@ -713,7 +730,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
 
     private func finishPress(_ key: KeyButton) {
-        if alternatesKey == ObjectIdentifier(key) { alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil }
+        if alternatesKey == ObjectIdentifier(key) { alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil; alternatesTouch = nil }
         if alternatesPopup?.key === key || alternatesPopup?.key == nil { hideAlternates() }
         activeKeyPresses.remove(ObjectIdentifier(key))
         keyPresses.removeValue(forKey: ObjectIdentifier(key))
@@ -1628,7 +1645,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         supplementaryProtectedWords = []
         hasSupplementaryLexicon = false
         stopDeleting(); hidePreview(); hideAlternates()
-        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil
+        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil; alternatesTouch = nil
         statusTask?.cancel(); statusTask = nil
         statusLabel.isHidden = true
         invalidateSwipeContext()

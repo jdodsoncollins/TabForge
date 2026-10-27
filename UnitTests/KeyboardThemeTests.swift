@@ -95,7 +95,7 @@ struct KeyboardThemeTests {
         keyboard.frame = CGRect(x: 0, y: 0, width: width, height: keyboard.desiredHeight)
         keyboard.layoutIfNeeded()
         let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
-        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.sorted { $0.frame.minX < $1.frame.minX }
+        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
         #expect(controls.count == 10)
         #expect(controls.map(\.accessibilityIdentifier) == [
             "keyboard.escape", "keyboard.modifier.control", "keyboard.modifier.option", "keyboard.modifier.command",

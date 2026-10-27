@@ -115,7 +115,7 @@ final class EditorSession {
 }
 
 @MainActor
-private final class EditorKeyboardInputView: UIInputView {
+private final class EditorKeyboardInputView: KeyClickInputView {
     var requestedHeight: CGFloat = 350 {
         didSet { invalidateIntrinsicContentSize() }
     }
@@ -187,6 +187,7 @@ final class EditorHostView: UIView, UITextViewDelegate, @preconcurrency NSTextSt
         document.onSelectionChange = { [weak self] in self?.selectionChanged() }
         keyboard = CodingKeyboardView(document: document, preferences: preferences)
         keyboard.isPreview = true
+        keyboardInputView.clicksEnabled = { [weak preferences] in preferences?.settings.keyClicks ?? false }
         keyboardInputView.allowsSelfSizing = true
         keyboardInputView.autoresizingMask = [.flexibleWidth]
         keyboardInputView.requestedHeight = keyboard.desiredHeight

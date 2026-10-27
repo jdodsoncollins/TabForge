@@ -39,7 +39,7 @@ A text proxy does not synthesize hardware key events. A visible Control, Option,
 
 ## Key and gesture lifecycle
 
-Keys use UIKit button tracking and commit on release inside the hit area. Cancellation and release outside cancel the press. Hit regions fill part of the inter-key gaps while remaining within usable screen regions. UIKit's public control and gesture behavior supplies the platform integration; TabForge does not have Apple's private keyboard touch classifier or promise system-level edge/palm rejection.
+Keys use UIKit button tracking and commit on release inside the hit area. Cancellation and release outside cancel the press. Holding a key that has alternates (the hinted digit on q–p, or related operators on symbol keys) for about 0.4 seconds opens a callout; sliding picks an entry and release commits it, including a release outside the key. VoiceOver exposes the same alternates as custom actions. Hit regions fill part of the inter-key gaps while remaining within usable screen regions. UIKit's public control and gesture behavior supplies the platform integration; TabForge does not have Apple's private keyboard touch classifier or promise system-level edge/palm rejection.
 
 Keys permit overlapping touches. A press captures modifier state at finger-down so a held modifier can be released before its character key without losing the intended chord. Tapping a modifier arms the next key. Grid replacement waits until active presses finish, preventing orientation or state changes from destroying a held key. Single-finger swipe and cursor-scrub gestures reject multi-finger gestures.
 
@@ -58,6 +58,8 @@ Test phone portrait/landscape, iPad full/floating/split windows, and relevant Du
 ## Smart input boundaries
 
 **Prose autocorrection** is off by default. Enabling it still requires the Code editor profile and known, eligible host traits. Structured fields, explicit host opt-outs, secure fields, Terminal/Remote profiles, the playground's code editor, and code-like lines remain literal. English ASCII candidates are bounded and restricted to a single spelling edit, including an adjacent transposition. Apple `UITextChecker` supplies guesses; this is not Apple's private system keyboard prediction engine.
+
+**Sentence capitals and the double-space period** apply only in the Code editor profile when the host field asks for sentence capitalization in a plain, non-secure field. Auto-capitalization only turns on Shift. A second Space within 1.5 seconds after a letter or digit replaces the verified space with ". "; missing context leaves the space literal. Both have their own switch under Editing preferences.
 
 Correction commits on Space. Immediately pressing Delete restores the original spelling and rejects that guess once. Document identity and text anchors are checked before replacement and undo. Missing or changing proxy evidence prevents an unverified edit. An asynchronously obtained, bounded supplementary lexicon protects names and shortcut inputs in memory; it is never persisted.
 

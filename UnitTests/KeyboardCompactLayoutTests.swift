@@ -285,6 +285,106 @@ struct KeyboardCompactLayoutTests {
         }
     }
 
+    @Test func holdingATopRowLetterTypesItsHintedDigit() async throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.haptics = false
+        preferences.settings.keyClicks = false
+        let document = MemoryDocument()
+        let keyboard = CodingKeyboardView(document: document, preferences: preferences)
+        layout(keyboard, in: CGSize(width: 390, height: 844))
+        let q = try button("q", in: keyboard)
+        q.sendActions(for: .touchDown)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(keyboard.subviews.contains { $0.accessibilityIdentifier == "keyboard.alternates" })
+        q.sendActions(for: .touchUpInside)
+        #expect(document.text == "1")
+        #expect(!keyboard.subviews.contains { $0.accessibilityIdentifier == "keyboard.alternates" })
+        try tap("q", in: keyboard)
+        #expect(document.text == "1q")
+        #expect(q.accessibilityCustomActions?.map(\.name) == ["Type 1"])
+    }
+
+    @Test func compactSymbolRowHasAnOperatorPage() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let document = MemoryDocument()
+        let keyboard = CodingKeyboardView(document: document, preferences: preferences)
+        layout(keyboard, in: CGSize(width: 375, height: 667))
+        #expect(!keyboard.isCompactHeight)
+        _ = try button("{", in: keyboard)
+        try tap("symbolPage", in: keyboard)
+        for name in ["=", "\"", "'", ";", ":", "/", "-", "_"] { _ = try button(name, in: keyboard) }
+        #expect(!visibleKeys(in: keyboard).contains { $0.accessibilityIdentifier == "key.{" })
+        let equals = try button("=", in: keyboard)
+        let row = visibleKeys(in: keyboard).filter { abs($0.frame.midY - equals.frame.midY) < 1 }
+        #expect(row.count == 11)
+        #expect(row.allSatisfy { $0.frame.width >= 24 })
+        try tap(";", in: keyboard)
+        #expect(document.text == ";")
+        try tap("symbolPage", in: keyboard)
+        _ = try button("{", in: keyboard)
+    }
+
+    @Test func sentenceCapitalsAndDoubleSpacePeriodFollowTheHost() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let document = MemoryDocument()
+        document.capitalizesSentences = true
+        let keyboard = CodingKeyboardView(document: document, preferences: preferences)
+        layout(keyboard, in: CGSize(width: 390, height: 844))
+        keyboard.hostContextDidChange()
+        try tap("H", in: keyboard)
+        try tap("i", in: keyboard)
+        try tap("space", in: keyboard)
+        try tap("space", in: keyboard)
+        #expect(document.text == "Hi. ")
+        try tap("O", in: keyboard)
+        #expect(document.text == "Hi. O")
+
+        let (codePreferences, codeSuite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: codeSuite) }
+        let code = MemoryDocument()
+        let literal = CodingKeyboardView(document: code, preferences: codePreferences)
+        layout(literal, in: CGSize(width: 390, height: 844))
+        literal.hostContextDidChange()
+        try tap("h", in: literal)
+        try tap("space", in: literal)
+        try tap("space", in: literal)
+        #expect(code.text == "h  ")
+    }
+
+    @Test func returnKeyShowsTheHostTitle() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let document = MemoryDocument()
+        document.returnKeyLabel = "Send"
+        let keyboard = CodingKeyboardView(document: document, preferences: preferences)
+        layout(keyboard, in: CGSize(width: 390, height: 844))
+        let send = try button("Return", in: keyboard)
+        #expect(send.accessibilityLabel == "Send")
+        document.returnKeyLabel = nil
+        keyboard.refreshContext()
+        #expect(try button("Return", in: keyboard).accessibilityLabel == "Return")
+    }
+
+    @Test(arguments: [375.0, 440, 1024])
+    func chosenToolbarKeysAppearInOrder(_ width: Double) throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.toolbarKeys = [.escape, .tab, .control, .pipe, .left, .right]
+        let document = MemoryDocument()
+        let keyboard = CodingKeyboardView(document: document, preferences: preferences)
+        layout(keyboard, in: CGSize(width: width, height: 1000))
+        let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
+        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
+        #expect(controls.map(\.accessibilityIdentifier) == ["keyboard.escape", "keyboard.toolbar.tab", "keyboard.modifier.control",
+            "keyboard.toolbar.pipe", "keyboard.arrow.left", "keyboard.arrow.right", "keyboard.quickSettings"])
+        let pipe = try #require(controls.first { $0.accessibilityIdentifier == "keyboard.toolbar.pipe" })
+        pipe.sendActions(for: .touchDown); pipe.sendActions(for: .touchUpInside)
+        #expect(document.text == "|")
+    }
+
     private func store() throws -> (PreferencesStore, String) {
         let suite = "TabForge.CompactLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

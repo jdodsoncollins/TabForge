@@ -15,6 +15,12 @@ final class TextViewDocument: TextDocument {
         return HostAutocorrectionTraits.allows(autocorrection: view.autocorrectionType,
             keyboardType: view.keyboardType, secure: view.isSecureTextEntry, contentType: view.textContentType)
     }
+    var capitalizesSentences: Bool {
+        guard let view = textView, view.isEditable else { return false }
+        return HostProseTraits.capitalizesSentences(autocapitalization: view.autocapitalizationType,
+            keyboardType: view.keyboardType, secure: view.isSecureTextEntry)
+    }
+    var returnKeyLabel: String? { HostProseTraits.label(for: textView?.returnKeyType) }
     var before: String? {
         guard let view = textView else { return nil }
         return (view.text as NSString).substring(to: view.selectedRange.location)
@@ -111,10 +117,47 @@ final class ProxyDocument: TextDocument {
             keyboardType: keyboardType, secure: secure,
             contentType: proxy.textContentType ?? nil)
     }
+    var capitalizesSentences: Bool {
+        guard let proxy = controller?.textDocumentProxy else { return false }
+        return HostProseTraits.capitalizesSentences(autocapitalization: proxy.autocapitalizationType,
+            keyboardType: proxy.keyboardType, secure: proxy.isSecureTextEntry)
+    }
+    var returnKeyLabel: String? { HostProseTraits.label(for: controller?.textDocumentProxy.returnKeyType) }
     var before: String? { controller?.textDocumentProxy.documentContextBeforeInput }
     var after: String? { controller?.textDocumentProxy.documentContextAfterInput }
     var selectedText: String? { controller?.textDocumentProxy.selectedText }
     func insert(_ text: String) { controller?.textDocumentProxy.insertText(text) }
     func deleteBackward() { controller?.textDocumentProxy.deleteBackward() }
     func move(by offset: Int) { controller?.textDocumentProxy.adjustTextPosition(byCharacterOffset: offset) }
+}
+
+@MainActor
+enum HostProseTraits {
+    static func capitalizesSentences(autocapitalization: UITextAutocapitalizationType?, keyboardType: UIKeyboardType?, secure: Bool?) -> Bool {
+        guard autocapitalization == .sentences, secure != true else { return false }
+        return [.default, .asciiCapable, .twitter].contains(keyboardType ?? .default)
+    }
+
+    static func label(for returnKey: UIReturnKeyType?) -> String? {
+        switch returnKey {
+        case .go: "Go"
+        case .google, .yahoo, .search: "Search"
+        case .join: "Join"
+        case .next: "Next"
+        case .route: "Route"
+        case .send: "Send"
+        case .done: "Done"
+        case .emergencyCall: "Call"
+        case .continue: "Continue"
+        default: nil
+        }
+    }
+}
+
+/// iOS plays `UIDevice.playInputClick()` only for an input view that adopts
+/// `UIInputViewAudioFeedback`; the user's Keyboard Clicks setting still applies.
+@MainActor
+class KeyClickInputView: UIInputView, UIInputViewAudioFeedback {
+    var clicksEnabled: () -> Bool = { false }
+    var enableInputClicksWhenVisible: Bool { clicksEnabled() }
 }

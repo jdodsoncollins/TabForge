@@ -11,7 +11,7 @@ private enum KeyAction: Equatable {
     case text(String), shift, delete, tab, space, enter, mode, symbols, globe, indent, outdent
     case navigation(NavigationKey)
     case line
-    case function, modifier(KeyboardModifiers), settings
+    case function, modifier(KeyboardModifiers), settings, symbolPage
 }
 
 @MainActor
@@ -82,7 +82,7 @@ private final class KeyButton: UIButton {
 
 /// Shared by the real keyboard extension and the app's editable playground.
 @MainActor
-final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputViewAudioFeedback {
+final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     let preferences: PreferencesStore
     let engine: EditingEngine
     private let documentRouter: KeyboardDocumentRouter
@@ -127,6 +127,23 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
     private var capsLock = false
     private var numbers = false
     private var moreSymbols = false
+    /// The Compact symbol row's second page of operators and punctuation.
+    private var symbolPage = false
+    /// Shift was turned on for a sentence start rather than by the user.
+    private var autoShifted = false
+    private var lastSpaceTime = Date.distantPast
+    private var displayedReturnLabel: String?
+    private var extraToolbarButtons: [ToolbarKey: UIButton] = [:]
+    @MainActor private struct AlternatesPopup {
+        weak var key: KeyButton?
+        let options: [String]
+        let view: UIView
+        let labels: [UILabel]
+        var selected = 0
+    }
+    private var alternatesPopup: AlternatesPopup?
+    private var alternatesTask: Task<Void, Never>?
+    private var alternatesKey: ObjectIdentifier?
     private var latchedModifiers: KeyboardModifiers = []
     private var heldModifiers: KeyboardModifiers = []
     private var usedHeldModifiers: KeyboardModifiers = []
@@ -244,6 +261,33 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             guard let self, let button = escapeButton else { return }; self.finishToolbarPress(button, cancelled: true)
         }, for: [.touchCancel, .touchUpOutside])
         toolbar.addSubview(escapeButton)
+        for key in ToolbarKey.allCases where key == .tab || key.text != nil {
+            let button = UIButton(type: .system)
+            let name = String(key.title.split(separator: " ").first ?? "")
+            if let text = key.text {
+                button.setTitle(text, for: .normal)
+                button.titleLabel?.font = .monospacedSystemFont(ofSize: 18, weight: .medium)
+                button.accessibilityUserInputLabels = [name, text]
+            } else {
+                button.setImage(UIImage(systemName: "arrow.right.to.line", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+            }
+            button.accessibilityLabel = name
+            button.accessibilityIdentifier = "keyboard.toolbar.\(key.rawValue)"
+            button.accessibilityTraits.insert(.keyboardKey)
+            button.isExclusiveTouch = false
+            let action: KeyAction = key.text.map { .text($0) } ?? .tab
+            button.addAction(UIAction { [weak self, weak button] _ in
+                guard let self, let button else { return }; self.beginToolbarPress(button)
+            }, for: .touchDown)
+            button.addAction(UIAction { [weak self, weak button] _ in
+                guard let self, let button else { return }; self.finishToolbarPress(button, action: action)
+            }, for: .touchUpInside)
+            button.addAction(UIAction { [weak self, weak button] _ in
+                guard let self, let button else { return }; self.finishToolbarPress(button, cancelled: true)
+            }, for: [.touchCancel, .touchUpOutside])
+            button.isHidden = true
+            toolbar.addSubview(button); extraToolbarButtons[key] = button
+        }
         deleteLineButton.tintColor = .label
         deleteLineButton.accessibilityIdentifier = "keyboard.deleteLine"
         deleteLineButton.isExclusiveTouch = false
@@ -368,7 +412,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         case .dark: overrideUserInterfaceStyle = .dark
         }
         backgroundColor = palette.background
-        for button in toolbarControls { button.tintColor = palette.text }
+        for button in allToolbarButtons { button.tintColor = palette.text }
         statusLabel.textColor = palette.accent
         statusLabel.backgroundColor = palette.background
         swipeLayer.strokeColor = palette.accent.resolvedColor(with: traitCollection).cgColor
@@ -399,6 +443,22 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             key.accessibilityUserInputLabels = [title, key.accessibilityLabel ?? title]
             key.accessibilityHint = "Tap for the next key, or hold while pressing other keys. Tap again to cancel."
         }
+        if case .text(let value) = action, !utility {
+            let options = KeyAlternates.alternates(for: value)
+            if !options.isEmpty {
+                key.accessibilityCustomActions = options.map { option in
+                    UIAccessibilityCustomAction(name: "Type " + option) { [weak self] _ in
+                        self?.perform(.text(option), capturedModifiers: [], capturedUppercase: false); return self != nil
+                    }
+                }
+            }
+        }
+        if action == .symbolPage {
+            key.accessibilityLabel = symbolPage ? "Brackets" : "More symbols"
+            key.accessibilityUserInputLabels = [title, key.accessibilityLabel ?? title]
+            key.accessibilityHint = "Switch the symbol row between brackets and operators."
+            key.accessibilityIdentifier = "key.symbolPage"
+        }
         if action == .function {
             key.accessibilityLabel = "Function layer"
             key.accessibilityUserInputLabels = ["Fn", "Function layer"]
@@ -416,6 +476,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             guard let self, let key else { return }
             if self.consumeCancelledSnippetRelease(key) { self.finishPress(key); return }
             self.hidePreview()
+            if let alternate = self.takeAlternate(for: key) {
+                self.perform(.text(alternate), capturedModifiers: [], capturedUppercase: false)
+                self.finishPress(key); return
+            }
             if key.action == .shift {
                 self.shiftHeld = false
                 if !self.shiftUsed { self.perform(.shift) }
@@ -435,13 +499,22 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             self.playKeyFeedback()
             self.showPreview(for: key)
             if key.action == .delete, self.keyPresses[ObjectIdentifier(key)]?.modifiers.isEmpty == true { self.startDeleting() }
+            self.scheduleAlternates(for: key)
         }, for: .touchDown)
         key.addAction(UIAction { [weak self, weak key] _ in
             guard let self, let key else { return }
-            if key.action == .shift { self.shiftHeld = false; self.shiftUsed = false; self.updateLetterLegends() }
-            if case .modifier(let modifier) = key.action { self.endModifier(modifier, cancelled: true) }
-            self.hidePreview(); self.finishPress(key)
-        }, for: [.touchCancel, .touchUpOutside])
+            self.cancelPress(key)
+        }, for: .touchCancel)
+        key.addAction(UIAction { [weak self, weak key] _ in
+            guard let self, let key else { return }
+            // Sliding onto the alternates callout leaves the key's own area.
+            if !self.consumeCancelledSnippetRelease(key), let alternate = self.takeAlternate(for: key) {
+                self.perform(.text(alternate), capturedModifiers: [], capturedUppercase: false)
+                self.finishPress(key); return
+            }
+            self.cancelPress(key)
+        }, for: .touchUpOutside)
+        key.addTarget(self, action: #selector(keyDragged(_:event:)), for: [.touchDragInside, .touchDragOutside])
         if action == .globe { key.addTarget(self, action: #selector(globeEvent(_:event:)), for: .allTouchEvents) }
         if action == .space {
             let pan = UIPanGestureRecognizer(target: self, action: #selector(scrubCursor(_:)))
@@ -456,12 +529,91 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
     }
 
     private func textKeys(_ values: [String]) -> [KeyButton] { values.map { makeKey($0, .text($0)) } }
+    private func cancelPress(_ key: KeyButton) {
+        if key.action == .shift { shiftHeld = false; shiftUsed = false; updateLetterLegends() }
+        if case .modifier(let modifier) = key.action { endModifier(modifier, cancelled: true) }
+        hidePreview(); finishPress(key)
+    }
+
+    /// Holding a key with alternates shows a callout; sliding picks one.
+    private func scheduleAlternates(for key: KeyButton) {
+        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil
+        guard case .text(let text) = key.action, keyPresses[ObjectIdentifier(key)]?.modifiers.isEmpty == true else { return }
+        let options = KeyAlternates.alternates(for: text)
+        guard !options.isEmpty else { return }
+        alternatesKey = ObjectIdentifier(key)
+        alternatesTask = Task { [weak self, weak key] in
+            try? await Task.sleep(for: .milliseconds(380))
+            guard !Task.isCancelled, let self, let key, self.activeKeyPresses.contains(ObjectIdentifier(key)),
+                  !self.isScrubbing, self.swipeTrace.isEmpty else { return }
+            self.showAlternates(options, for: key)
+        }
+    }
+    private func showAlternates(_ options: [String], for key: KeyButton) {
+        hidePreview(); hideAlternates()
+        let cellWidth = max(key.frame.width, 36)
+        let height: CGFloat = 46
+        let width = cellWidth * CGFloat(options.count)
+        let x = max(2, min(bounds.width - width - 2, key.frame.midX - cellWidth / 2))
+        let container = UIView(frame: CGRect(x: x, y: max(0, key.frame.minY - height - 4), width: width, height: height))
+        container.backgroundColor = palette.key
+        container.layer.cornerRadius = 10
+        container.layer.cornerCurve = .continuous
+        container.layer.shadowColor = UIColor.black.cgColor
+        container.layer.shadowOpacity = 0.25
+        container.layer.shadowRadius = 4
+        container.layer.shadowOffset = CGSize(width: 0, height: 1)
+        container.isUserInteractionEnabled = false
+        container.accessibilityElementsHidden = true
+        container.accessibilityIdentifier = "keyboard.alternates"
+        let labels = options.enumerated().map { index, option in
+            let label = UILabel(frame: CGRect(x: CGFloat(index) * cellWidth + 2, y: 3, width: cellWidth - 4, height: height - 6))
+            label.text = option
+            label.textAlignment = .center
+            label.font = .monospacedSystemFont(ofSize: option.count > 2 ? 15 : 20, weight: .medium)
+            label.adjustsFontSizeToFitWidth = true
+            label.minimumScaleFactor = 0.6
+            label.layer.cornerRadius = 7
+            label.layer.cornerCurve = .continuous
+            label.clipsToBounds = true
+            container.addSubview(label)
+            return label
+        }
+        addSubview(container)
+        alternatesPopup = AlternatesPopup(key: key, options: options, view: container, labels: labels)
+        selectAlternate(0)
+        if preferences.settings.haptics { feedback?.generator.impactOccurred(intensity: 0.6) }
+    }
+    private func selectAlternate(_ index: Int) {
+        guard var popup = alternatesPopup else { return }
+        popup.selected = index
+        alternatesPopup = popup
+        for (position, label) in popup.labels.enumerated() {
+            label.backgroundColor = position == index ? palette.accent : .clear
+            label.textColor = position == index ? palette.background : palette.text
+        }
+    }
+    @objc private func keyDragged(_ sender: UIControl, event: UIEvent) {
+        guard let popup = alternatesPopup, popup.key === sender,
+              let touch = event.touches(for: sender)?.first else { return }
+        let cell = popup.view.frame.width / CGFloat(popup.options.count)
+        let index = Int(((touch.location(in: self).x - popup.view.frame.minX) / cell).rounded(.down))
+        let clamped = min(max(index, 0), popup.options.count - 1)
+        if clamped != popup.selected { selectAlternate(clamped) }
+    }
+    private func takeAlternate(for key: KeyButton) -> String? {
+        guard let popup = alternatesPopup, popup.key === key else { return nil }
+        hideAlternates()
+        return popup.options[popup.selected]
+    }
+    private func hideAlternates() {
+        alternatesPopup?.view.removeFromSuperview(); alternatesPopup = nil
+    }
     private func consumeCancelledSnippetRelease(_ button: UIButton) -> Bool {
         let cancelled = cancelledSnippetReleases.contains(button)
         cancelledSnippetReleases.remove(button)
         return cancelled
     }
-    var enableInputClicksWhenVisible: Bool { preferences.settings.keyClicks }
     private func playKeyFeedback() {
         let settings = preferences.settings
         if settings.keyClicks { UIDevice.current.playInputClick() }
@@ -508,7 +660,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             shiftHeld = true; shiftUsed = false; updateLetterLegends()
         } else if case .modifier(let modifier) = key.action {
             beginModifier(modifier)
-        } else if key.action != .mode && key.action != .symbols && key.action != .function && key.action != .settings {
+        } else if ![.mode, .symbols, .function, .settings, .symbolPage].contains(key.action) {
             // Capture a chord at finger-down, so releasing its modifier before
             // this finger lifts cannot turn it into an ordinary character.
             keyPresses[ObjectIdentifier(key)] = KeyPress(modifiers: modifiers, uppercase: uppercase || shiftHeld)
@@ -524,6 +676,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
     }
 
     private func finishPress(_ key: KeyButton) {
+        if alternatesKey == ObjectIdentifier(key) { alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil }
+        if alternatesPopup?.key === key || alternatesPopup?.key == nil { hideAlternates() }
         activeKeyPresses.remove(ObjectIdentifier(key))
         keyPresses.removeValue(forKey: ObjectIdentifier(key))
         // Releasing a letter must not cancel a different finger's held Delete.
@@ -552,7 +706,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         // Replacing a pressed UIControl cancels its other in-flight touches.
         // Finish all independent presses before replacing the grid.
         guard activeKeyPresses.isEmpty else { needsKeyRebuild = true; return }
-        stopDeleting(); hidePreview()
+        stopDeleting(); hidePreview(); hideAlternates()
         let focusedAction = rows.flatMap { $0 }.first { $0.accessibilityElementIsFocused() }?.action
         rows.flatMap { $0 }.forEach { $0.removeFromSuperview() }
         rows = []
@@ -593,7 +747,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
                 } else {
                     symbols = [makeKey("Outdent", symbol: "decrease.indent", .outdent, utility: true), makeKey("Indent", symbol: "increase.indent", .indent, utility: true)]
                 }
-                symbols += textKeys(["{", "}", "[", "]", "<", ">", "(", ")"])
+                if layout == .compact {
+                    // Most iPhones in portrait use this layout. A second page puts
+                    // the most-typed operators one tap away instead of on 123.
+                    symbols += textKeys(symbolPage ? ["=", "\"", "'", ";", ":", "/", "-", "_"] : ["{", "}", "[", "]", "<", ">", "(", ")"])
+                    symbols.append(makeKey(symbolPage ? "{}" : "=;", .symbolPage, weight: 0.9, utility: true))
+                } else {
+                    symbols += textKeys(["{", "}", "[", "]", "<", ">", "(", ")"])
+                }
                 if layout == .widePhone { symbols += textKeys(["=", "_"]) }
                 if layout.hasFullSymbolRow { symbols += textKeys(["=", "_", ":", ";", "/", "|"]) }
                 if layout == .studio || layout == .tabletop { symbols += textKeys(["&", "!", "~", "?"]) }
@@ -641,7 +802,13 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         if !isCompactHeight && layout != .compact {
             bottom += [makeKey("Left", symbol: "arrow.left", .navigation(.left), utility: true), makeKey("Right", symbol: "arrow.right", .navigation(.right), utility: true)]
         }
-        bottom.append(makeKey("Return", symbol: "return", .enter, weight: 1.5, utility: true))
+        let returnLabel = isEditingSnippet ? nil : engine.document.returnKeyLabel
+        displayedReturnLabel = returnLabel
+        let enter = returnLabel.map { makeKey($0, .enter, weight: 1.5, utility: true) }
+            ?? makeKey("Return", symbol: "return", .enter, weight: 1.5, utility: true)
+        // Keep one identifier whatever the host's title.
+        enter.accessibilityIdentifier = "key.Return"
+        bottom.append(enter)
         rows.append(bottom)
         updateLetterLegends()
         updateKeyFonts()
@@ -783,14 +950,32 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
     }
 
     private var toolbarControls: [UIButton] {
-        // Desktop order: Escape at the leading edge, then modifiers, with the
-        // arrows toward the trailing side and settings last.
-        [escapeButton] + modifierButtons.map(\.0) + [deleteLineButton] + navigationButtons + [gearButton]
+        // Desktop order by default: Escape at the leading edge, then modifiers,
+        // with the arrows toward the trailing side and settings last.
+        preferences.settings.toolbarKeys.prefix(ToolbarKey.maximumCount).compactMap(toolbarButton) + [gearButton]
+    }
+    private var allToolbarButtons: [UIButton] {
+        navigationButtons + modifierButtons.map(\.0) + [deleteLineButton, escapeButton, gearButton] + Array(extraToolbarButtons.values)
+    }
+    private func toolbarButton(_ key: ToolbarKey) -> UIButton? {
+        switch key {
+        case .escape: escapeButton
+        case .deleteLine: deleteLineButton
+        case .control: modifierButtons.first { $0.1 == .control }?.0
+        case .option: modifierButtons.first { $0.1 == .option }?.0
+        case .command: modifierButtons.first { $0.1 == .command }?.0
+        case .left: navigationButtons[0]
+        case .down: navigationButtons[1]
+        case .up: navigationButtons[2]
+        case .right: navigationButtons[3]
+        default: extraToolbarButtons[key]
+        }
     }
 
     private func arrangeToolbar() {
         let segments = usableSegments(in: toolbar.frame)
         let controls = toolbarControls
+        for button in allToolbarButtons where !controls.contains(button) { button.isHidden = true }
         let totalWidth = segments.reduce(CGFloat.zero) { $0 + $1.width }
         var offset = 0
         for (index, segment) in segments.enumerated() {
@@ -873,8 +1058,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         let bold = traitCollection.legibilityWeight == .bold
         let metrics = UIFontMetrics(forTextStyle: .body)
         escapeButton.titleLabel?.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: 12, weight: bold ? .bold : .medium), maximumPointSize: 16, compatibleWith: traitCollection)
+        for button in extraToolbarButtons.values where button.title(for: .normal) != nil {
+            button.titleLabel?.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: 18, weight: bold ? .bold : .medium), maximumPointSize: 22, compatibleWith: traitCollection)
+        }
         for key in rows.flatMap({ $0 }) {
-            let baseSize: CGFloat = key.action == .function || key.action == .modifier(.control) ? 14 : 21
+            let baseSize: CGFloat = [.function, .modifier(.control), .enter, .symbolPage].contains(key.action) ? 14 : 21
             key.legend.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: baseSize, weight: bold ? .bold : .regular), maximumPointSize: baseSize + 5, compatibleWith: traitCollection)
             key.hint.font = .monospacedSystemFont(ofSize: 9, weight: bold ? .bold : .medium)
             key.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: bold ? .bold : .medium), forImageIn: .normal)
@@ -896,12 +1084,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         statusTask?.cancel(); statusLabel.isHidden = true
         invalidateSwipeContext()
         // Changing character pages or Shift must preserve the pending chord.
-        if action == .mode || action == .symbols || action == .shift || action == .function {
+        if [.mode, .symbols, .shift, .function, .symbolPage].contains(action) {
             switch action {
             case .mode: numbers.toggle(); moreSymbols = false; functionLayer = false
             case .symbols: moreSymbols.toggle()
             case .function: functionLayer.toggle()
+            case .symbolPage: symbolPage.toggle()
             default:
+                autoShifted = false
                 if Date().timeIntervalSince(lastShiftTap) < 0.35 { capsLock = true; uppercase = true }
                 else { uppercase.toggle(); capsLock = false }
                 lastShiftTap = Date()
@@ -939,7 +1129,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             case .delete: engine.backspace()
             case .line: performLineAction()
             case .tab: engine.tab()
-            case .space: engine.type(" ")
+            case .space: typeSpace()
             case .enter: engine.newline()
             case .indent: engine.indent()
             case .outdent:
@@ -951,15 +1141,51 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             }
         }
         if !handled { showStatus(pending.isEmpty ? "Host limits cursor movement" : "Shortcut unavailable · use the client’s keys") }
+        if action != .space || !pending.isEmpty { lastSpaceTime = .distantPast }
         if case .text = action, capturedUppercase == nil {
             if shiftHeld { shiftUsed = true }
+            if uppercase && !capsLock { uppercase = false; autoShifted = false; rebuild() }
+        }
+        updateAutoCapitalization()
+        refreshContext()
+    }
+
+    private var proseInputActive: Bool {
+        !isEditingSnippet && engine.settings.smartEditingEnabled && engine.document.capitalizesSentences
+    }
+    /// A quick second Space after a word becomes ". ", replacing only a verified space.
+    private func typeSpace() {
+        if preferences.settings.periodShortcut, proseInputActive,
+           Date().timeIntervalSince(lastSpaceTime) < 1.5,
+           ProseInputPolicy.doubleSpaceMakesPeriod(before: engine.document.contextBeforeInput(maximumCharacters: 2)) {
+            engine.invalidateAutocorrection()
+            if engine.document.replaceTextBeforeCursor(" ", with: ". ") { lastSpaceTime = .distantPast; return }
+        }
+        engine.type(" ")
+        lastSpaceTime = Date()
+    }
+    private func updateAutoCapitalization() {
+        let wanted = preferences.settings.autoCapitalize && proseInputActive && !numbers && !functionLayer && !capsLock
+            && engine.document.selectedText == nil
+            && ProseInputPolicy.startsSentence(before: engine.document.contextBeforeInput(maximumCharacters: 8))
+        if wanted {
+            guard !uppercase else { return }
+            uppercase = true; autoShifted = true; rebuild()
+        } else if autoShifted {
+            autoShifted = false
             if uppercase && !capsLock { uppercase = false; rebuild() }
         }
+    }
+    /// The host changed its text, selection or field: re-evaluate sentence
+    /// capitals before refreshing suggestions and the return key.
+    func hostContextDidChange() {
+        updateAutoCapitalization()
         refreshContext()
     }
 
     func refreshContext() {
         if let draft = snippetDraft { snippetPanel?.update(draft); return }
+        if engine.document.returnKeyLabel != displayedReturnLabel { rebuild() }
         if preferences.settings.autocorrectProse { engine.validateAutocorrectionContext() }
         // Suggestions remain available in the shared tools and settings menu,
         // leaving a toolbar slot for the dedicated Escape key.
@@ -1107,6 +1333,21 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
                 }
             }
         autocorrect.subtitle = "On Space in supported prose fields. Delete immediately to undo."
+        let enabledToolbarKeys = settings.toolbarKeys
+        let toolbarKeys = UIMenu(title: "Toolbar keys", children: ToolbarKey.allCases.map { key in
+            let on = enabledToolbarKeys.contains(key)
+            let full = !on && enabledToolbarKeys.count >= ToolbarKey.maximumCount
+            let action = UIAction(title: key.title, attributes: full ? .disabled : [], state: on ? .on : .off) { [weak self] _ in
+                guard let self else { return }
+                var keys = self.preferences.settings.toolbarKeys
+                if let index = keys.firstIndex(of: key) { keys.remove(at: index) } else { keys.append(key) }
+                self.preferences.settings.toolbarKeys = keys; self.applySettings()
+            }
+            if full { action.subtitle = "Turn another key off first" }
+            return action
+        } + [UIAction(title: "Restore default toolbar", image: UIImage(systemName: "arrow.counterclockwise")) { [weak self] _ in
+            self?.preferences.settings.toolbarKeys = ToolbarKey.defaults; self?.applySettings()
+        }])
         let size = UIMenu(title: "Key size", children: KeySize.allCases.map { size in
             UIAction(title: size.rawValue, state: settings.keySize == size ? .on : .off) { [weak self] _ in
                 self?.preferences.settings.keySize = size; self?.applySettings()
@@ -1148,12 +1389,13 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             UIMenu(title: "Editing preferences", image: UIImage(systemName: "text.cursor"), children: [
                 toggle("Pair brackets & quotes", \.autoPair), toggle("Skip existing closing delimiter", \.skipClosingDelimiter),
                 toggle("Automatic indentation", \.smartIndent), toggle("Code suggestions", \.suggestions), autocorrect,
+                toggle("Auto-capitalization", \.autoCapitalize), toggle("“.” shortcut", \.periodShortcut),
                 toggle("Swipe typing · beta", \.swipeTyping)
             ]),
             UIMenu(title: "Layout & keys", image: UIImage(systemName: "keyboard"), children: [
                 size, toggle("Show number row in full layouts", \.showNumberRow),
                 toggle("Extra editing row on wide layouts", \.showNavigationRow), toggle("Show number hints", \.showKeyHints),
-                toggle("Key press previews", \.keyPreviews)
+                toggle("Key press previews", \.keyPreviews), toolbarKeys
             ]),
             UIMenu(title: "Gestures & feedback", children: [
                 toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Key click sounds", \.keyClicks), toggle("Haptic feedback", \.haptics),
@@ -1273,16 +1515,30 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
             showStatus("Selection formatted")
         } catch { showStatus(preferences.settings.language == .json ? "Check JSON syntax" : "Use the indent keys here") }
     }
-    func showStatus(_ message: String) {
+    func showStatus(_ message: String, seconds: Int = 3) {
         statusTask?.cancel()
         statusLabel.text = message; statusLabel.isHidden = false
         statusLabel.superview?.bringSubviewToFront(statusLabel)
         UIAccessibility.post(notification: .announcement, argument: message)
         statusTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled else { return }
             self?.statusLabel.isHidden = true
         }
+    }
+    private static let tips = [
+        "Tip: hold q–p for numbers, or hold a symbol for related operators",
+        "Tip: on iPhone, =; switches the symbol row to operators",
+        "Tip: drag the space bar to move the cursor",
+        "Tip: the gear holds snippets, themes, toolbar keys and settings"
+    ]
+    /// Shows each one-time tip once, on a later keyboard appearance each.
+    func showNextTipIfNeeded() {
+        guard !isPreview, !isEditingSnippet, window != nil else { return }
+        let index = preferences.settings.tipsShown
+        guard Self.tips.indices.contains(index) else { return }
+        preferences.settings.tipsShown = index + 1
+        showStatus(Self.tips[index], seconds: 6)
     }
     @objc private func globeEvent(_ sender: UIView, event: UIEvent) {
         if !isEditingSnippet { onInputModeEvent?(sender, event) }
@@ -1308,7 +1564,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
     /// reusable key grid and saved preferences, not gesture or timer state.
     func releaseTransientResources() {
         if isEditingSnippet {
-            for button in toolbarControls + rows.flatMap({ $0 }) {
+            for button in allToolbarButtons + rows.flatMap({ $0 }) {
                 let id = ObjectIdentifier(button)
                 if activeKeyPresses.contains(id) || keyPresses[id] != nil { cancelledSnippetReleases.add(button) }
             }
@@ -1318,7 +1574,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         proseCorrector = nil; correctionDocument = nil
         supplementaryProtectedWords = []
         hasSupplementaryLexicon = false
-        stopDeleting(); hidePreview()
+        stopDeleting(); hidePreview(); hideAlternates()
+        alternatesTask?.cancel(); alternatesTask = nil; alternatesKey = nil
         statusTask?.cancel(); statusTask = nil
         statusLabel.isHidden = true
         invalidateSwipeContext()
@@ -1368,7 +1625,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate, UIInputView
         if gesture.state == .ended || gesture.state == .cancelled { isScrubbing = false; refreshContext() }
     }
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard !isEditingSnippet else { return false }
+        guard !isEditingSnippet, alternatesPopup == nil else { return false }
         guard !UIAccessibility.isVoiceOverRunning, !UIAccessibility.isSwitchControlRunning else { return false }
         if gestureRecognizer.view is KeyButton {
             return preferences.settings.cursorScrubbing && preferences.settings.compatibility != .terminal && modifiers.isEmpty

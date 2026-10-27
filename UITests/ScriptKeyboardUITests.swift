@@ -69,9 +69,11 @@ final class ScriptKeyboardUITests: XCTestCase {
         app.buttons["keyboard.quickSettings"].tap()
         app.buttons["Layout & keys"].tap()
         app.buttons["Extra editing row on wide layouts"].tap()
-        let escape = app.descendants(matching: .any)["key.Esc"].firstMatch
-        XCTAssertTrue(escape.waitForExistence(timeout: 5))
-        for title in ["Esc", "Home", "End", "Tab", "Return", "Outdent", "Indent", "{"] {
+        let home = app.descendants(matching: .any)["key.Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 5))
+        // Esc stays on the toolbar by default, so the row doesn't repeat it.
+        XCTAssertTrue(app.buttons["keyboard.escape"].isHittable)
+        for title in ["Home", "End", "Tab", "Return", "Outdent", "Indent", "{"] {
             XCTAssertTrue(app.descendants(matching: .any)["key.\(title)"].firstMatch.isHittable)
         }
         app.descendants(matching: .any)["key.q"].firstMatch.tap()
@@ -97,9 +99,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         guard (surface.value as? String)?.contains("horizontalDivision=true") == true else {
             throw XCTSkip("The simulator still reports a vertical book fold. Set a horizontal fold in Device Hub before running this pose check.")
         }
-        let escape = app.descendants(matching: .any)["key.Esc"].firstMatch
-        XCTAssertTrue(escape.waitForExistence(timeout: 10), surface.value as? String ?? "No surface")
-        XCTAssertTrue(escape.isHittable)
+        let home = app.descendants(matching: .any)["key.Home"].firstMatch
+        XCTAssertTrue(home.waitForExistence(timeout: 10), surface.value as? String ?? "No surface")
+        XCTAssertTrue(home.isHittable)
+        XCTAssertTrue(app.buttons["keyboard.escape"].isHittable)
         XCTAssertTrue((surface.value as? String)?.hasPrefix("Tabletop") == true)
         XCTAssertGreaterThan(surface.frame.minY, app.frame.height * 0.4)
         XCTAssertGreaterThan(surface.frame.height, app.frame.height * 0.3)

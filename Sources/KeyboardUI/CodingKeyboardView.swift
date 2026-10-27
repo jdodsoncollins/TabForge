@@ -766,20 +766,25 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             if !isCompactHeight {
                 var symbols: [KeyButton] = []
                 if layout == .tabletop {
-                    var navigation = [makeKey("Esc", .navigation(.escape), utility: true),
-                        makeKey("Outdent", symbol: "decrease.indent", .outdent, utility: true),
+                    // The toolbar is visible above this row, so skip the keys it already shows.
+                    let toolbarKeys = Set(preferences.settings.toolbarKeys.prefix(ToolbarKey.maximumCount))
+                    var navigation: [KeyButton] = []
+                    if !toolbarKeys.contains(.escape) { navigation.append(makeKey("Esc", .navigation(.escape), utility: true)) }
+                    navigation += [makeKey("Outdent", symbol: "decrease.indent", .outdent, utility: true),
                         makeKey("Indent", symbol: "increase.indent", .indent, utility: true),
                         makeKey("Home", .navigation(.home), utility: true), makeKey("End", .navigation(.end), utility: true)]
                     if preferences.settings.compatibility == .terminal {
-                        navigation += [makeKey("Page Up", symbol: "arrow.up.to.line", .navigation(.pageUp), utility: true),
-                            makeKey("Up", symbol: "arrow.up", .navigation(.up), utility: true),
-                            makeKey("Down", symbol: "arrow.down", .navigation(.down), utility: true),
-                            makeKey("Page Down", symbol: "arrow.down.to.line", .navigation(.pageDown), utility: true)]
+                        navigation.append(makeKey("Page Up", symbol: "arrow.up.to.line", .navigation(.pageUp), utility: true))
+                        if !toolbarKeys.contains(.up) { navigation.append(makeKey("Up", symbol: "arrow.up", .navigation(.up), utility: true)) }
+                        if !toolbarKeys.contains(.down) { navigation.append(makeKey("Down", symbol: "arrow.down", .navigation(.down), utility: true)) }
+                        navigation.append(makeKey("Page Down", symbol: "arrow.down.to.line", .navigation(.pageDown), utility: true))
                     }
-                    let line = makeKey("Delete line", symbol: "text.badge.minus", .line, utility: true)
-                    line.isEnabled = preferences.settings.compatibility != .remoteDesktop
-                    line.accessibilityLabel = preferences.settings.compatibility == .terminal ? "Send Ctrl-U" : "Delete line"
-                    navigation.append(line)
+                    if !toolbarKeys.contains(.deleteLine) {
+                        let line = makeKey("Delete line", symbol: "text.badge.minus", .line, utility: true)
+                        line.isEnabled = preferences.settings.compatibility != .remoteDesktop
+                        line.accessibilityLabel = preferences.settings.compatibility == .terminal ? "Send Ctrl-U" : "Delete line"
+                        navigation.append(line)
+                    }
                     rows.append(navigation)
                 } else {
                     symbols = [makeKey("Outdent", symbol: "decrease.indent", .outdent, utility: true), makeKey("Indent", symbol: "increase.indent", .indent, utility: true)]

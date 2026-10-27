@@ -19,6 +19,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         let outside = q.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -3))
         start.press(forDuration: 0.1, thenDragTo: outside)
         XCTAssertEqual(editor.value as? String, initial + "q")
+        // Holding until q's alternates open, then sliding well away from the
+        // key and its callout, still cancels.
+        start.press(forDuration: 0.8, thenDragTo: outside)
+        XCTAssertEqual(editor.value as? String, initial + "q")
     }
 
     func testNavigationToolbarAndMergedToolsSettings() {
@@ -126,7 +130,7 @@ final class ScriptKeyboardUITests: XCTestCase {
         let initial = editor.value as? String ?? ""
         app.buttons["keyboard.quickSettings"].tap()
         app.buttons["Editing preferences"].tap()
-        app.buttons["Swipe code words · beta"].tap()
+        app.buttons["Swipe typing · beta"].tap()
         a.press(forDuration: 0.05, thenDragTo: s)
         XCTAssertEqual(editor.value as? String, initial + "as")
     }

@@ -285,6 +285,22 @@ struct KeyboardCompactLayoutTests {
         }
     }
 
+    @Test func wideButShortHostsSkipTheAutomaticNumberRow() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let short = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        // A closed Duo's outer display: wide enough for the wide-phone layout.
+        layout(short, in: CGSize(width: 466, height: 678))
+        #expect(!short.isCompactHeight)
+        #expect(!visibleKeys(in: short).contains { $0.accessibilityIdentifier == "key.1" })
+        #expect(try button("q", in: short).subviews.compactMap { ($0 as? UILabel)?.text }.contains("1"))
+        let tall = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        layout(tall, in: CGSize(width: 466, height: 1000))
+        _ = try button("1", in: tall)
+        #expect(try !button("q", in: tall).subviews.compactMap { ($0 as? UILabel)?.text }.contains("1"))
+        #expect(tall.desiredHeight > short.desiredHeight)
+    }
+
     @Test func holdingATopRowLetterTypesItsHintedDigit() async throws {
         let (preferences, suite) = try store()
         defer { UserDefaults.standard.removePersistentDomain(forName: suite) }

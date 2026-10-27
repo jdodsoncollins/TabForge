@@ -387,7 +387,16 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
     private var snippetPanelHeight: CGFloat { snippetPanel?.preferredHeight ?? 0 }
     private var fullRowCount: Int {
-        5 + (layout == .tabletop ? 1 : 0) + ((!numbers && (layout != .compact || preferences.settings.showNumberRow)) ? 1 : 0)
+        5 + (layout == .tabletop ? 1 : 0) + (showsNumberRow ? 1 : 0)
+    }
+    /// Host height in points, when the scene reports one.
+    private var hostHeight: CGFloat?
+    /// The automatic number row needs a tall host as well as a wide one. A
+    /// wide but short screen, such as a closed Duo, keeps the q–p digits.
+    private var showsNumberRow: Bool {
+        guard !numbers else { return false }
+        if preferences.settings.showNumberRow { return true }
+        return layout != .compact && (hostHeight ?? .infinity) >= 760
     }
     func applySettings() {
         // SwiftUI updates the editor for cursor and focus changes as well as
@@ -759,7 +768,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 if layout.hasFullSymbolRow { symbols += textKeys(["=", "_", ":", ";", "/", "|"]) }
                 if layout == .studio || layout == .tabletop { symbols += textKeys(["&", "!", "~", "?"]) }
                 rows.append(symbols)
-                if (layout != .compact || preferences.settings.showNumberRow) && !numbers {
+                if showsNumberRow {
                     rows.append(textKeys(Array("1234567890").map(String.init) + (layout == .studio || layout == .tabletop ? ["-", "+", "*", "%"] : [])))
                 }
             }
@@ -779,7 +788,9 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 for (index, letters) in letterRows.enumerated() {
                     var keys = Array(letters).enumerated().map { position, letter in
                         let title = uppercase ? String(letter).uppercased() : String(letter)
-                        return makeKey(title, hint: index == 0 ? String((position + 1) % 10) : nil, .text(title))
+                        // The number row already shows these digits.
+                        let digit = index == 0 && (isCompactHeight || !showsNumberRow) ? String((position + 1) % 10) : nil
+                        return makeKey(title, hint: digit, .text(title))
                     }
                     if !isCompactHeight && layout.hasFullSymbolRow, index == 0 { keys += textKeys(["-", "+"]) }
                     if !isCompactHeight && layout.hasFullSymbolRow, index == 1 { keys += textKeys([";", "'", "\\"]) }
@@ -809,6 +820,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Keep one identifier whatever the host's title.
         enter.accessibilityIdentifier = "key.Return"
         bottom.append(enter)
+        // The outer bottom corners follow the display's rounded corners.
+        bottom.first?.cornerConfiguration = .corners(topLeftRadius: .fixed(7), topRightRadius: .fixed(7),
+            bottomLeftRadius: .containerConcentric(minimum: 7), bottomRightRadius: .fixed(7))
+        bottom.last?.cornerConfiguration = .corners(topLeftRadius: .fixed(7), topRightRadius: .fixed(7),
+            bottomLeftRadius: .fixed(7), bottomRightRadius: .containerConcentric(minimum: 7))
         rows.append(bottom)
         updateLetterLegends()
         updateKeyFonts()
@@ -845,6 +861,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             sceneSize = CGSize(width: size.height, height: size.width)
         }
         let hostSize = availableHostSize ?? sceneSize
+        let roomChanged = ((hostHeight ?? .infinity) >= 760) != ((hostSize?.height ?? .infinity) >= 760)
+        hostHeight = hostSize?.height
         let previouslyPreferredCompact = prefersCompactHeight
         prefersCompactHeight = KeyboardHeightPolicy.resolve(mode: preferences.settings.heightMode,
             availableHeight: hostSize.map { Double($0.height) },
@@ -862,7 +880,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             accessibilityValue = "\(resolved.rawValue) horizontalDivision=\(horizontal) local=\(bounds) window=\(window.bounds) divisions=\(divisions)"
         }
         #endif
-        if resolved != layout || compactChanged {
+        if resolved != layout || compactChanged || roomChanged {
             layout = resolved
             if !compact { functionLayer = false }
             if !ProcessInfo.processInfo.arguments.contains("--layout-diagnostics") { accessibilityValue = resolved.rawValue }

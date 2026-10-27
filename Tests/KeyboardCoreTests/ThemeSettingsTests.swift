@@ -30,7 +30,7 @@ struct ThemeSettingsTests {
         #expect(older.hapticStrength == .light)
     }
 
-        @Test func defaultsFollowIOSAppearance() {
+    @Test func defaultsFollowIOSAppearance() {
         let settings = KeyboardSettings()
         #expect(settings.theme == .standard)
         #expect(settings.appearance == .system)

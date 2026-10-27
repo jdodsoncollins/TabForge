@@ -299,6 +299,8 @@ struct KeyboardCompactLayoutTests {
         _ = try button("1", in: tall)
         #expect(try !button("q", in: tall).subviews.compactMap { ($0 as? UILabel)?.text }.contains("1"))
         #expect(tall.desiredHeight > short.desiredHeight)
+        let shortRow = try button("q", in: short).frame.height
+        #expect(shortRow >= 40 && shortRow < (try button("q", in: tall).frame.height))
     }
 
     @Test func holdingATopRowLetterTypesItsHintedDigit() async throws {
@@ -330,6 +332,7 @@ struct KeyboardCompactLayoutTests {
         #expect(!keyboard.isCompactHeight)
         _ = try button("{", in: keyboard)
         try tap("symbolPage", in: keyboard)
+        keyboard.layoutIfNeeded()
         for name in ["=", "\"", "'", ";", ":", "/", "-", "_"] { _ = try button(name, in: keyboard) }
         #expect(!visibleKeys(in: keyboard).contains { $0.accessibilityIdentifier == "key.{" })
         let equals = try button("=", in: keyboard)

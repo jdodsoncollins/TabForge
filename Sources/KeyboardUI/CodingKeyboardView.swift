@@ -383,7 +383,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
     var desiredHeight: CGFloat {
         // Keep the requested height independent from any temporary host clipping.
-        tabletopHeight ?? ((prefersCompactHeight ? 4 * (44 + 4) : 44 + CGFloat(fullRowCount) * (preferences.settings.keySize.height + 6)) + 8 + safeAreaInsets.top + safeAreaInsets.bottom + snippetPanelHeight)
+        tabletopHeight ?? ((prefersCompactHeight ? 4 * (44 + 4) : 44 + CGFloat(fullRowCount) * (rowKeyHeight + 6)) + 8 + safeAreaInsets.top + safeAreaInsets.bottom + snippetPanelHeight)
     }
     private var snippetPanelHeight: CGFloat { snippetPanel?.preferredHeight ?? 0 }
     private var fullRowCount: Int {
@@ -396,8 +396,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private var showsNumberRow: Bool {
         guard !numbers else { return false }
         if preferences.settings.showNumberRow { return true }
-        return layout != .compact && (hostHeight ?? .infinity) >= 760
+        return layout != .compact && !isShortHost
     }
+    private var isShortHost: Bool { (hostHeight ?? .infinity) < 760 }
+    /// Short screens (an iPhone SE or a closed Duo) trade 6 pt per row for
+    /// editor space; the chosen key size still orders the three options.
+    private var rowKeyHeight: CGFloat { preferences.settings.keySize.height - (isShortHost ? 6 : 0) }
     func applySettings() {
         // SwiftUI updates the editor for cursor and focus changes as well as
         // preferences. Avoid touching every control or rescanning suggestions
@@ -563,8 +567,17 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         let cellWidth = max(key.frame.width, 36)
         let height: CGFloat = 46
         let width = cellWidth * CGFloat(options.count)
-        let x = max(2, min(bounds.width - width - 2, key.frame.midX - cellWidth / 2))
-        let container = UIView(frame: CGRect(x: x, y: max(0, key.frame.minY - height - 4), width: width, height: height))
+        // Stay within the safe area and on the key's side of any fold.
+        let row = CGRect(x: safeAreaInsets.left + 2, y: key.frame.minY, width: max(0, bounds.width - safeAreaInsets.left - safeAreaInsets.right - 4), height: key.frame.height)
+        let area = usableSegments(in: row).first { $0.minX <= key.frame.midX && key.frame.midX <= $0.maxX } ?? row
+        var x = max(area.minX, min(area.maxX - width, key.frame.midX - cellWidth / 2))
+        var y = key.frame.minY - height - 4
+        if y < safeAreaInsets.top + snippetPanelHeight {
+            // No room above (compact height): sit beside the key instead of over it.
+            y = key.frame.minY
+            x = key.frame.maxX + 4 + width <= area.maxX ? key.frame.maxX + 4 : max(area.minX, key.frame.minX - 4 - width)
+        }
+        let container = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
         container.backgroundColor = palette.key
         container.layer.cornerRadius = 10
         container.layer.cornerCurve = .continuous
@@ -590,7 +603,9 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
         addSubview(container)
         alternatesPopup = AlternatesPopup(key: key, options: options, view: container, labels: labels)
-        selectAlternate(0)
+        // Preselect the entry under the finger, even when the callout shifted to fit.
+        let underKey = Int(((key.frame.midX - x) / cellWidth).rounded(.down))
+        selectAlternate(min(max(underKey, 0), options.count - 1))
         if preferences.settings.haptics { feedback?.generator.impactOccurred(intensity: 0.6) }
     }
     private func selectAlternate(_ index: Int) {
@@ -910,7 +925,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         let gap: CGFloat = isCompactHeight ? 4 : 6
         let available = max(0, bounds.height - contentTop - safeAreaInsets.bottom - toolbarHeight - 8)
         let fittedHeight = max(0, available / CGFloat(max(1, rows.count)) - gap)
-        let preferredHeight: CGFloat = isCompactHeight ? 44 : preferences.settings.keySize.height
+        let preferredHeight: CGFloat = isCompactHeight ? 44 : rowKeyHeight
         let height = tabletopHeight == nil ? min(preferredHeight, fittedHeight) : fittedHeight
         for (index, row) in rows.enumerated() {
             var rect = CGRect(x: safeAreaInsets.left + 5, y: contentTop + toolbarHeight + 2 + CGFloat(index) * (height + gap), width: max(0, usableWidth - 10), height: height)
@@ -1546,14 +1561,16 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
     private static let tips = [
         "Tip: hold q–p for numbers, or hold a symbol for related operators",
-        "Tip: on iPhone, =; switches the symbol row to operators",
+        "Tip: =; switches the symbol row to operators",
         "Tip: drag the space bar to move the cursor",
         "Tip: the gear holds snippets, themes, toolbar keys and settings"
     ]
     /// Shows each one-time tip once, on a later keyboard appearance each.
     func showNextTipIfNeeded() {
         guard !isPreview, !isEditingSnippet, window != nil else { return }
-        let index = preferences.settings.tipsShown
+        var index = preferences.settings.tipsShown
+        // The symbol-page tip only makes sense where that key is shown.
+        if index == 1 && (layout != .compact || isCompactHeight) { index += 1 }
         guard Self.tips.indices.contains(index) else { return }
         preferences.settings.tipsShown = index + 1
         showStatus(Self.tips[index], seconds: 6)

@@ -69,11 +69,11 @@ checks = {
 }
 report = {
     "locale": "en-US",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "scope": "offline content validation; remote state is not queried",
     "fields": fields,
     "checks": checks,
-    "whatsNew": "Version 1.0.1 update notes are included in canonical metadata.",
+    "whatsNew": "Version 1.1.0 update notes are included in canonical metadata.",
     "supportUrl": version["supportUrl"],
     "supportUrlStatus": "Confirm the public page and approved support contact before submission.",
     "keywordIntelligence": {
@@ -87,7 +87,7 @@ report = {
 (ROOT / "validation.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 if args.staging_dir:
     app_info_file = args.staging_dir / "app-info" / "en-US.json"
-    version_file = args.staging_dir / "version" / "1.0.1" / "en-US.json"
+    version_file = args.staging_dir / "version" / "1.1.0" / "en-US.json"
     for destination, contents in [(app_info_file, app_info), (version_file, version)]:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(contents, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

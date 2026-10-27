@@ -46,7 +46,7 @@ enum AutocorrectionPolicy {
         guard (3...32).contains(proposed.count), proposed.allSatisfy(isASCIILetter), hasOrdinaryCase(proposed) else { return nil }
         let lower = proposed.lowercased()
         guard lower != word.lowercased(), !keywords.contains(lower),
-              editDistance(word.lowercased(), lower) <= 1 else { return nil }
+              editDistance(word.lowercased(), lower) <= (word.count >= 5 ? 2 : 1) else { return nil }
         if word.first?.isUppercase == true { return lower.prefix(1).uppercased() + lower.dropFirst() }
         return lower
     }
@@ -82,6 +82,8 @@ struct AutocorrectionState {
         var leftAnchor: String
         var rightAnchor: String?
         var identifier: UUID?
+        /// One tap point per typed letter, nil where none was reported.
+        var touches: [SwipePoint?] = []
     }
     var typedWord: Word?
     var undo: Word?
@@ -127,6 +129,9 @@ extension EditingEngine {
             trackedWord: tracked
         ) else { return false }
         if let rejected, rejected.original == word, matches(rejected, suffix: word) { return false }
+        // Tap points are meaningful only when this keyboard typed the whole word.
+        correctionTouches = tracked == word ? typedWord.flatMap { $0.touches.count == word.count ? $0.touches : nil } ?? [] : []
+        defer { correctionTouches = [] }
         guard let proposed = correctionProvider?(word),
               let corrected = AutocorrectionPolicy.correction(proposed, for: word) else { return false }
         let record = AutocorrectionState.Word(
@@ -156,7 +161,7 @@ extension EditingEngine {
         return true
     }
 
-    func prepareAutocorrectionTracking(for text: String) -> AutocorrectionState.Word? {
+    func prepareAutocorrectionTracking(for text: String, touch: SwipePoint?) -> AutocorrectionState.Word? {
         let previous = autocorrectionState.typedWord
         invalidateAutocorrection()
         guard canAutocorrect, text.count == 1, text.first.map(AutocorrectionPolicy.isASCIILetter) == true,
@@ -164,12 +169,13 @@ extension EditingEngine {
         let after = document.contextAfterInput(maximumCharacters: AutocorrectionPolicy.anchorLimit)
         if var previous, previous.original.count < 32, matches(previous, suffix: previous.original) {
             previous.original += text
+            previous.touches.append(touch)
             return previous
         }
         guard before.isEmpty || before.last?.isWhitespace == true else { return nil }
         return AutocorrectionState.Word(
             original: text, corrected: "", leftAnchor: String(before.suffix(AutocorrectionPolicy.anchorLimit)),
-            rightAnchor: after, identifier: document.autocorrectionContextIdentifier
+            rightAnchor: after, identifier: document.autocorrectionContextIdentifier, touches: [touch]
         )
     }
 

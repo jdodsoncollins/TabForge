@@ -181,6 +181,13 @@ public struct KeyboardSettings: Codable, Equatable, Sendable {
         get { proseAutocorrection ?? false }
         set { proseAutocorrection = newValue ? true : nil }
     }
+    private var tapLearning: Bool?
+    /// Off by default. When on, the keyboard keeps average tap offsets per key
+    /// on this device to sharpen autocorrect; turning it off erases them.
+    public var learnTapPositions: Bool {
+        get { tapLearning ?? false }
+        set { tapLearning = newValue ? true : nil }
+    }
     public var swipeTyping = false
     public var cursorScrubbing = true
     public var haptics = true

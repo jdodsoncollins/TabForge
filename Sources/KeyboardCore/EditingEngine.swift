@@ -13,15 +13,23 @@ public final class EditingEngine {
     public var correctionProvider: ((String) -> String?)? {
         didSet { invalidateAutocorrection() }
     }
+    /// Tap points for the word being passed to `correctionProvider`, one per
+    /// letter, or empty. Set only for the duration of that call.
+    public internal(set) var correctionTouches: [SwipePoint?] = []
+    /// Bundled words for English suggestions. Optional so the keyboard can run
+    /// without it when memory is short.
+    public var lexicon: Lexicon?
     var autocorrectionState = AutocorrectionState()
     private let pairs = ["{": "}", "[": "]", "(": ")", "\"": "\"", "'": "'", "`": "`"]
     public init(document: any TextDocument, settings: KeyboardSettings = .init()) {
         self.document = document; self.settings = settings
     }
 
-    public func type(_ text: String) {
+    /// `touch` is where the key was tapped, in the platform layer's key
+    /// coordinate space. It is kept only while the current word is tracked.
+    public func type(_ text: String, touch: SwipePoint? = nil) {
         if text == " ", autocorrectBeforeSpace() { return }
-        let trackedWord = prepareAutocorrectionTracking(for: text)
+        let trackedWord = prepareAutocorrectionTracking(for: text, touch: touch)
         defer { finishAutocorrectionTracking(trackedWord) }
         // Ordinary text never participates in delimiter pairing. In a native
         // editor, avoid requesting document-sized context for each letter.
@@ -179,21 +187,34 @@ public final class EditingEngine {
         guard settings.suggestions, settings.smartEditingEnabled else { return [] }
         // Bound work even when a host exposes an entire large source file. Never
         // offer a replacement for a truncated identifier.
-        let context = document.contextBeforeInput(maximumCharacters: 4096) ?? ""
+        let context = document.contextBeforeInput(maximumCharacters: DocumentVocabulary.contextBefore) ?? ""
         let prefix = String(context.reversed().prefix(while: { $0.isLetter || $0.isNumber || $0 == "_" }).reversed())
         guard prefix.count <= 128 else { return [] }
         guard !prefix.isEmpty else { return Array(settings.language.keywords.prefix(3)) }
-        let local = context.components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_")).inverted)
+        // Keywords first, then the document's own names by use, then English
+        // words when prose autocorrect is on and the bundled list is loaded.
+        let local = DocumentVocabulary(before: context).completions(prefix: prefix, limit: 3)
+        let english = settings.autocorrectProse && prefix.count >= 2 && prefix.allSatisfy({ $0.isASCII && $0.isLowercase })
+            ? lexicon?.completions(prefix: prefix, limit: 3) ?? [] : []
         var seen = Set<String>()
         let foldedPrefix = prefix.lowercased()
         var result: [String] = []
-        for word in settings.language.keywords + local {
-            if word.count > prefix.count, word.lowercased().hasPrefix(foldedPrefix), seen.insert(word).inserted {
+        for word in settings.language.keywords + local + english {
+            if word.count > prefix.count, word.lowercased().hasPrefix(foldedPrefix), seen.insert(word.lowercased()).inserted {
                 result.append(word)
                 if result.count == 3 { break }
             }
         }
         return result
+    }
+
+    /// Words around the cursor from bounded host context, for correction and
+    /// swipe. Built on request and not retained by the engine.
+    public func documentVocabulary() -> DocumentVocabulary {
+        guard settings.smartEditingEnabled,
+              let before = document.contextBeforeInput(maximumCharacters: DocumentVocabulary.contextBefore) else { return .init() }
+        return DocumentVocabulary(
+            before: before, after: document.contextAfterInput(maximumCharacters: DocumentVocabulary.contextAfter) ?? "")
     }
     public func complete(_ word: String) {
         invalidateAutocorrection()

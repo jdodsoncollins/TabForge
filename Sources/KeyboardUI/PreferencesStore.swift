@@ -40,5 +40,25 @@ final class PreferencesStore {
         local.set(data, forKey: Self.key)
     }
 
-    func reset() { settings = .init() }
+    func reset() {
+        settings = .init()
+        eraseTouchAdaptation()
+    }
+
+    // Optional tap calibration lives under its own key so turning the setting
+    // off can erase it completely. It holds per-key offsets, never text.
+    private static let touchKey = "touchAdaptation.v1"
+
+    func loadTouchAdaptation() -> TouchAdaptation {
+        guard settings.learnTapPositions, let data = local?.data(forKey: Self.touchKey),
+              let adaptation = try? JSONDecoder().decode(TouchAdaptation.self, from: data) else { return .init() }
+        return adaptation
+    }
+
+    func saveTouchAdaptation(_ adaptation: TouchAdaptation) {
+        guard settings.learnTapPositions, !adaptation.isEmpty else { return }
+        local?.set(try? JSONEncoder().encode(adaptation), forKey: Self.touchKey)
+    }
+
+    func eraseTouchAdaptation() { local?.removeObject(forKey: Self.touchKey) }
 }

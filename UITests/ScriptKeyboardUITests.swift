@@ -432,21 +432,28 @@ final class ScriptKeyboardUITests: XCTestCase {
         let option = app.buttons[title].firstMatch
         let menu = app.collectionViews.firstMatch
         XCTAssertTrue(menu.waitForExistence(timeout: 5))
-        for _ in 0..<12 {
+        // UIKit anchors this long keyboard menu at its bottom. Its initial
+        // visible actions are the first few; preferences above them are
+        // revealed by dragging the menu content downward. An expanded submenu
+        // can open with its own options running below the screen, so once a
+        // drag stops changing the rows in view, search the other way.
+        var revealAbove = true
+        var previous: [CGRect] = []
+        for _ in 0..<20 {
             if option.exists && option.isHittable { option.tap(); return }
             let visible = menu.buttons.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }
                 .map { $0.frame.intersection(app.frame) }.filter { !$0.isEmpty }.sorted { $0.minY < $1.minY }
             guard visible.count >= 2 else { break }
-            let lower = visible[visible.count - 1]
-            // The top item can be clipped under the menu's rounded edge.
-            // Start on an interior visible row, away from the status bar.
-            let upper = visible[visible.count >= 3 ? 1 : 0]
+            if visible == previous { revealAbove.toggle() }
+            previous = visible
+            // The outer items can be clipped under the menu's rounded edges or
+            // the status bar. Start each drag on an interior visible row.
+            let upper = revealAbove ? visible[visible.count >= 3 ? 1 : 0] : visible[0]
+            let lower = revealAbove ? visible[visible.count - 1] : visible[visible.count >= 3 ? visible.count - 2 : visible.count - 1]
+            let (start, end) = revealAbove ? (upper, lower) : (lower, upper)
             let point = app.coordinate(withNormalizedOffset: .zero)
-            // UIKit anchors this long keyboard menu at its bottom. Its initial
-            // visible actions are Editing actions and Snippets; preferences
-            // above them are revealed by dragging the menu content downward.
-            point.withOffset(CGVector(dx: upper.midX - app.frame.minX, dy: upper.midY - app.frame.minY))
-                .press(forDuration: 0.05, thenDragTo: point.withOffset(CGVector(dx: lower.midX - app.frame.minX, dy: lower.midY - app.frame.minY)))
+            point.withOffset(CGVector(dx: start.midX - app.frame.minX, dy: start.midY - app.frame.minY))
+                .press(forDuration: 0.05, thenDragTo: point.withOffset(CGVector(dx: end.midX - app.frame.minX, dy: end.midY - app.frame.minY)))
         }
         XCTFail("Keyboard menu option could not be reached: \(title)")
     }

@@ -120,9 +120,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     /// rotates or a Duo folds.
     var needsGlobe = true { didSet { if oldValue != needsGlobe { rebuild() } } }
     /// iOS's own globe sits outside the keyboard, where some orientations and
-    /// Duo postures leave it hard to find. Every layout wider than a phone in
-    /// portrait has room for TabForge's globe as well, so it is always there.
-    private var showsGlobeKey: Bool { needsGlobe || layout != .compact }
+    /// Duo postures leave it hard to find, and a closed Duo's outer display has
+    /// none for third-party keyboards. Every layout wider than a phone in
+    /// portrait, and every short screen, shows TabForge's globe as well. Taller
+    /// Face ID phones in portrait keep iOS's globe below the keyboard.
+    private var showsGlobeKey: Bool { needsGlobe || layout != .compact || isShortHost }
     /// Set when a globe press began with iOS's input-mode handler, which then
     /// owns the tap (next keyboard) and the hold (the keyboard list).
     private var globePressHandledBySystem = false

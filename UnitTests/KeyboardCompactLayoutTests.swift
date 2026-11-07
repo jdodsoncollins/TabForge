@@ -424,9 +424,12 @@ struct KeyboardCompactLayoutTests {
         #expect(!hasGlobe())
         // Wider layouts keep TabForge's globe even when iOS has its own, which
         // some orientations and Duo postures leave hard to find: a phone in
-        // landscape, a closed Duo on its side, an open Duo, and an iPad.
+        // landscape, a closed Duo on its side, an open Duo, and an iPad. A closed
+        // Duo's short outer display shows no iOS globe, so it keeps TabForge's
+        // even if insets narrow it to the phone layout.
         for host in [CGSize(width: 852, height: 393), CGSize(width: 951, height: 669),
-                     CGSize(width: 669, height: 951), CGSize(width: 1194, height: 834)] {
+                     CGSize(width: 669, height: 951), CGSize(width: 1194, height: 834),
+                     CGSize(width: 466, height: 678), CGSize(width: 440, height: 678)] {
             layout(keyboard, in: host)
             #expect(hasGlobe(), Comment(rawValue: "\(host)"))
         }

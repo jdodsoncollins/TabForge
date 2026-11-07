@@ -84,6 +84,8 @@ public enum HapticStrength: String, Codable, CaseIterable, Sendable {
 /// The tools and settings gear always follows them.
 public enum ToolbarKey: String, CaseIterable, Sendable {
     case escape, tab, control, option, command, deleteLine, pipe, tilde, backtick, backslash, dollar, left, down, up, right
+    /// A globe that switches keyboards, for hosts where iOS's own is hard to find.
+    case nextKeyboard
     public static let defaults: [Self] = [.escape, .control, .option, .command, .deleteLine, .left, .down, .up, .right]
     /// Keeps each toolbar target usable on the narrowest supported phone.
     public static let maximumCount = 10
@@ -104,6 +106,7 @@ public enum ToolbarKey: String, CaseIterable, Sendable {
         case .down: "Down arrow"
         case .up: "Up arrow"
         case .right: "Right arrow"
+        case .nextKeyboard: "Globe · next keyboard"
         }
     }
     /// The literal text for character keys.

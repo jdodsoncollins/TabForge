@@ -405,6 +405,79 @@ struct KeyboardCompactLayoutTests {
         #expect(document.text == "|")
     }
 
+    @Test func globeFollowsIOSInPortraitPhonesAndStaysOnWiderLayouts() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        func hasGlobe() -> Bool { visibleKeys(in: keyboard).contains { $0.accessibilityIdentifier == "key.Next keyboard" } }
+        // A portrait phone where iOS draws its own globe below the keyboard.
+        keyboard.needsGlobe = false
+        layout(keyboard, in: CGSize(width: 390, height: 844))
+        #expect(!hasGlobe())
+        // Rotating or unfolding can make iOS ask for one; the extension
+        // reports that on its next layout pass.
+        keyboard.needsGlobe = true
+        keyboard.layoutIfNeeded()
+        #expect(hasGlobe())
+        keyboard.needsGlobe = false
+        keyboard.layoutIfNeeded()
+        #expect(!hasGlobe())
+        // Wider layouts keep TabForge's globe even when iOS has its own, which
+        // some orientations and Duo postures leave hard to find: a phone in
+        // landscape, a closed Duo on its side, an open Duo, and an iPad.
+        for host in [CGSize(width: 852, height: 393), CGSize(width: 951, height: 669),
+                     CGSize(width: 669, height: 951), CGSize(width: 1194, height: 834)] {
+            layout(keyboard, in: host)
+            #expect(hasGlobe(), Comment(rawValue: "\(host)"))
+        }
+        // Other pages keep it too.
+        layout(keyboard, in: CGSize(width: 852, height: 393))
+        try tap("123", in: keyboard)
+        #expect(hasGlobe())
+        try tap("ABC", in: keyboard)
+        try tap("Fn", in: keyboard)
+        #expect(hasGlobe())
+    }
+
+    @Test func globeSwitchesOnceEvenWithAPendingModifier() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.toolbarKeys = ToolbarKey.defaults + [.nextKeyboard]
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        var switches = 0
+        var forwarded = 0
+        keyboard.onNextKeyboard = { switches += 1 }
+        // The extension hands real touches to iOS's input-mode handler. An
+        // activation without a touch, such as from assistive technology, switches here.
+        keyboard.onInputModeEvent = { _, _ in forwarded += 1 }
+        layout(keyboard, in: CGSize(width: 834, height: 1194))
+        try tap("Next keyboard", in: keyboard)
+        #expect(switches == 1 && forwarded == 0)
+
+        let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
+        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
+        // The optional toolbar globe sits beside the gear.
+        #expect(controls.suffix(2).map(\.accessibilityIdentifier) == ["keyboard.toolbar.nextKeyboard", "keyboard.quickSettings"])
+        let control = try #require(controls.first { $0.accessibilityIdentifier == "keyboard.modifier.control" })
+        control.sendActions(for: .touchDown); control.sendActions(for: .touchUpInside)
+        #expect(control.isSelected)
+        // A latched modifier never turns the globe into an unavailable shortcut.
+        let globe = try #require(controls.first { $0.accessibilityIdentifier == "keyboard.toolbar.nextKeyboard" })
+        #expect(globe.accessibilityLabel == "Next keyboard")
+        globe.sendActions(for: .touchDown); globe.sendActions(for: .touchUpInside)
+        #expect(switches == 2)
+        try tap("Next keyboard", in: keyboard)
+        #expect(switches == 3 && forwarded == 0)
+        let status = try #require(toolbar.subviews.first { $0.accessibilityIdentifier == "keyboard.status" })
+        #expect(status.isHidden)
+
+        // Next keyboard is also the gear menu's first item.
+        let gear = try #require(controls.last)
+        let first = try #require(gear.menu?.children.first as? UIMenu)
+        #expect(first.options.contains(.displayInline))
+        #expect((first.children.first as? UIAction)?.title == "Next keyboard")
+    }
+
     private func store() throws -> (PreferencesStore, String) {
         let suite = "TabForge.CompactLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

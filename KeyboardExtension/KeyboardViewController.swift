@@ -71,6 +71,14 @@ final class KeyboardViewController: UIInputViewController {
         prepareAutocorrection()
         keyboard.showNextTipIfNeeded()
     }
+    override func viewWillLayoutSubviews() {
+        // iOS changes this as the device rotates or a Duo folds: in some
+        // orientations it draws its own globe below the keyboard, in others it
+        // relies on ours. Xcode's keyboard template also reads it here, before
+        // each layout, rather than once when the view loads.
+        keyboard?.needsGlobe = needsInputModeSwitchKey
+        super.viewWillLayoutSubviews()
+    }
     override func textDidChange(_ textInput: (any UITextInput)?) {
         super.textDidChange(textInput)
         keyboard?.hostContextDidChange()

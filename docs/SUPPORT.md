@@ -18,6 +18,8 @@ The companion's keyboard and layout guide are previews. Their settings and snipp
 
 **The keyboard does not appear in one app or field.** iOS uses its own keyboard in secure and phone fields. Apps may also decline third-party keyboards. Try a regular text field in another app to distinguish a host restriction from a keyboard problem.
 
+**I can't find the globe to switch keyboards.** In a portrait iPhone layout iOS shows its own globe below the keyboard, and TabForge shows one only when iOS asks for it. Wider layouts, including a phone in landscape and every Duo pose, always show TabForge's globe in the bottom row. Tap it for the next keyboard, or hold it to choose one. You can also tap the gear and choose **Next keyboard**, or add **Globe · next keyboard** to the toolbar from Layout & keys → Toolbar keys.
+
 **Tab, Escape, arrows, or modifiers behave differently in a terminal or remote desktop.** Check the selected input profile under the gear menu. Terminal · ANSI sends control text and escape sequences only to clients that accept them. Remote desktop keeps input literal. An iOS keyboard extension does not send arbitrary hardware-key events; the remote client may require its own accessory controls.
 
 **Delete line or outdent is unavailable.** Some apps expose only a small amount of nearby text. TabForge declines a destructive edit when it cannot verify the range. Select the intended text in the host app and use ordinary Delete instead.

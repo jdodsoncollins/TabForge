@@ -131,6 +131,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private let gearButton = UIButton(type: .system)
     private let escapeButton = UIButton(type: .system)
     private var quickSettingsItems: [UIMenuElement] = []
+    /// The Fn layer's Settings key menu. It leaves out Next keyboard: that layer
+    /// only appears in short layouts, which always show the globe key, and a
+    /// landscape phone has little height for the menu's quick settings.
+    private var compactSettingsMenu: UIMenu?
     private let deleteLineButton = UIButton(type: .system)
     private var navigationButtons: [UIButton] = []
     private var modifierButtons: [(UIButton, KeyboardModifiers)] = []
@@ -498,7 +502,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         key.accessibilityUserInputLabels = [title, key.accessibilityLabel ?? title]
         if action == .settings {
             key.showsMenuAsPrimaryAction = true
-            key.menu = gearButton.menu
+            key.menu = compactSettingsMenu
             key.accessibilityLabel = "Tools and settings"
             key.accessibilityUserInputLabels = [title, "Tools and settings"]
         }
@@ -1685,10 +1689,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Switching keyboards comes first, beside the gear, so it is one tap
         // away even where the globe is hard to find.
         let nextKeyboard = UIAction(title: "Next keyboard", image: UIImage(systemName: "globe")) { [weak self] _ in self?.onNextKeyboard?() }
-        nextKeyboard.subtitle = "Such as the system keyboard, for dictation"
         let switching = UIMenu(options: .displayInline, children: [nextKeyboard])
-        gearButton.menu = isEditingSnippet ? nil : UIMenu(title: isPreview ? "Playground preview" : "Keyboard settings", children: [switching, editing, suggestions, snippets] + quickSettingsItems)
-        for key in rows.flatMap({ $0 }) where key.action == .settings { key.menu = gearButton.menu; key.isEnabled = !isEditingSnippet }
+        let title = isPreview ? "Playground preview" : "Keyboard settings"
+        gearButton.menu = isEditingSnippet ? nil : UIMenu(title: title, children: [switching, editing, suggestions, snippets] + quickSettingsItems)
+        compactSettingsMenu = isEditingSnippet ? nil : UIMenu(title: title, children: [editing, suggestions, snippets] + quickSettingsItems)
+        for key in rows.flatMap({ $0 }) where key.action == .settings { key.menu = compactSettingsMenu; key.isEnabled = !isEditingSnippet }
     }
 
     private func toggleCapsLock() {

@@ -437,6 +437,11 @@ struct KeyboardCompactLayoutTests {
         try tap("ABC", in: keyboard)
         try tap("Fn", in: keyboard)
         #expect(hasGlobe())
+        // That globe sits beside the Fn layer's Settings key, so its menu leaves
+        // out Next keyboard and a short screen keeps the quick settings in view.
+        let settings = try button("Settings", in: keyboard)
+        #expect(settings.menu?.children.first?.title == "Editing actions")
+        #expect(settings.menu?.children.contains { $0.title == "Keyboard height" } == true)
     }
 
     @Test func globeSwitchesOnceEvenWithAPendingModifier() throws {

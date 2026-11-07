@@ -121,10 +121,15 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     var needsGlobe = true { didSet { if oldValue != needsGlobe { rebuild() } } }
     /// iOS's own globe sits outside the keyboard, where some orientations and
     /// Duo postures leave it hard to find, and a closed Duo's outer display has
-    /// none for third-party keyboards. Every layout wider than a phone in
-    /// portrait, and every short screen, shows TabForge's globe as well. Taller
-    /// Face ID phones in portrait keep iOS's globe below the keyboard.
-    private var showsGlobeKey: Bool { needsGlobe || layout != .compact || isShortHost }
+    /// none for third-party keyboards, though iOS tells the keyboard it needs
+    /// none. Every keyboard wider than a phone in portrait, and every short
+    /// screen, shows TabForge's globe as well. The closed Duo's keyboard is
+    /// 466 pt wide, wider than any phone's 440, even where its insets leave the
+    /// phone layout. Taller Face ID phones in portrait keep iOS's globe below.
+    private var showsGlobeKey: Bool { needsGlobe || layout != .compact || isShortHost || bounds.width > 440 }
+    /// Whether the current key grid includes the globe, so a layout pass can
+    /// rebuild it when the rule above changes its answer.
+    private var builtWithGlobe = false
     /// Set when a globe press began with iOS's input-mode handler, which then
     /// owns the tap (next keyboard) and the hold (the keyboard list).
     private var globePressHandledBySystem = false
@@ -910,7 +915,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             }
         }
         var bottom = [makeKey(numbers ? "ABC" : "123", .mode, weight: 1.2, utility: true)]
-        if showsGlobeKey { bottom.append(makeKey("Next keyboard", symbol: "globe", .globe, utility: true)) }
+        builtWithGlobe = showsGlobeKey
+        if builtWithGlobe { bottom.append(makeKey("Next keyboard", symbol: "globe", .globe, utility: true)) }
         if isCompactHeight { bottom.append(makeKey("Fn", .function, utility: true)) }
         bottom.append(makeKey("Tab", symbol: "arrow.right.to.line", .tab, utility: true))
         bottom.append(makeKey("space", .space, weight: isCompactHeight || layout == .compact ? 3.5 : 6))
@@ -965,7 +971,15 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if let size = sceneSize, window?.windowScene?.effectiveGeometry.interfaceOrientation.isLandscape == true, size.width < size.height {
             sceneSize = CGSize(width: size.height, height: size.width)
         }
-        let hostSize = availableHostSize ?? sceneSize
+        // An extension may get no scene geometry. Fall back to the screen,
+        // turned to match the keyboard, which spans the screen's long side
+        // only in landscape.
+        var screenSize = window?.windowScene?.screen.bounds.size ?? window?.screen.bounds.size
+        if let size = screenSize {
+            let short = min(size.width, size.height), long = max(size.width, size.height)
+            screenSize = bounds.width > short + 1 ? CGSize(width: long, height: short) : CGSize(width: short, height: long)
+        }
+        let hostSize = availableHostSize ?? sceneSize ?? screenSize
         let roomChanged = ((hostHeight ?? .infinity) >= 760) != ((hostSize?.height ?? .infinity) >= 760)
         hostHeight = hostSize?.height
         let previouslyPreferredCompact = prefersCompactHeight
@@ -985,7 +999,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             accessibilityValue = "\(resolved.rawValue) horizontalDivision=\(horizontal) local=\(bounds) window=\(window.bounds) divisions=\(divisions)"
         }
         #endif
-        if resolved != layout || compactChanged || roomChanged {
+        if resolved != layout || compactChanged || roomChanged || builtWithGlobe != showsGlobeKey {
             layout = resolved
             if !compact { functionLayer = false }
             if !ProcessInfo.processInfo.arguments.contains("--layout-diagnostics") { accessibilityValue = resolved.rawValue }

@@ -433,6 +433,16 @@ struct KeyboardCompactLayoutTests {
             layout(keyboard, in: host)
             #expect(hasGlobe(), Comment(rawValue: "\(host)"))
         }
+        // The extension may learn nothing about its host. A closed Duo's
+        // keyboard is wider than any phone in portrait, though its insets
+        // (452 of 466 pt usable) keep the phone layout; the widest phone in
+        // portrait still leaves the globe to iOS.
+        keyboard.availableHostSize = nil
+        for (width, globe) in [(CGFloat(452), true), (466, true), (440, false), (390, false)] {
+            keyboard.frame = CGRect(x: 0, y: 0, width: width, height: keyboard.desiredHeight)
+            keyboard.layoutIfNeeded()
+            #expect(hasGlobe() == globe, Comment(rawValue: "\(width) pt with no host size"))
+        }
         // Other pages keep it too.
         layout(keyboard, in: CGSize(width: 852, height: 393))
         try tap("123", in: keyboard)

@@ -496,6 +496,56 @@ struct KeyboardCompactLayoutTests {
         #expect((first.children.first as? UIAction)?.title == "Next keyboard")
     }
 
+    @Test func crowdedBottomRowsKeepTargetsWideAndMessagesLeaveLettersVisible() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        keyboard.needsGlobe = false
+        func bottomRow() -> [UIButton] {
+            let keys = visibleKeys(in: keyboard)
+            let lowest = keys.map(\.frame.minY).max() ?? 0
+            return keys.filter { $0.frame.minY == lowest }
+        }
+        // A host giving a closed Duo its full 466 pt gets the wide-phone layout
+        // and the globe; the toolbar's arrows replace the bottom row's.
+        layout(keyboard, in: CGSize(width: 466, height: 678))
+        var row = bottomRow()
+        #expect(row.contains { $0.accessibilityIdentifier == "key.Next keyboard" })
+        #expect(!row.contains { $0.accessibilityIdentifier == "key.Left" })
+        #expect(row.allSatisfy { $0.frame.width >= 34 }, Comment(rawValue: "\(row.map(\.frame.width))"))
+        // Without both arrows in the toolbar, the bottom row keeps them.
+        preferences.settings.toolbarKeys = [.escape, .control, .left]
+        keyboard.applySettings()
+        layout(keyboard, in: CGSize(width: 466, height: 678))
+        row = bottomRow()
+        #expect(row.contains { $0.accessibilityIdentifier == "key.Left" } && row.contains { $0.accessibilityIdentifier == "key.Right" })
+        // Wider layouts keep them as well.
+        preferences.settings.toolbarKeys = ToolbarKey.defaults
+        keyboard.applySettings()
+        layout(keyboard, in: CGSize(width: 669, height: 951))
+        #expect(bottomRow().contains { $0.accessibilityIdentifier == "key.Left" })
+
+        // Without the toolbar, a message covers the space bar, not the letters.
+        layout(keyboard, in: CGSize(width: 852, height: 393))
+        #expect(keyboard.isCompactHeight)
+        keyboard.showStatus("Host limits cursor movement")
+        keyboard.setNeedsLayout()
+        keyboard.layoutIfNeeded()
+        let status = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.status" })
+        let space = try button("space", in: keyboard)
+        #expect(!status.isHidden && !status.isUserInteractionEnabled && status.frame.width >= 240)
+        #expect(status.frame.contains(CGPoint(x: space.frame.midX, y: space.frame.midY)))
+        for letter in ["q", "a", "z", "p"] { #expect(try !status.frame.intersects(button(letter, in: keyboard).frame), Comment(rawValue: letter)) }
+        // A narrow compact keyboard widens it past the space bar, inside the row.
+        layout(keyboard, in: CGSize(width: 390, height: 470))
+        #expect(keyboard.isCompactHeight)
+        keyboard.showStatus("Host limits cursor movement")
+        keyboard.setNeedsLayout()
+        keyboard.layoutIfNeeded()
+        #expect(status.frame.width >= 240 && status.frame.minX >= 0 && status.frame.maxX <= keyboard.bounds.width)
+        #expect(try !status.frame.intersects(button("q", in: keyboard).frame))
+    }
+
     private func store() throws -> (PreferencesStore, String) {
         let suite = "TabForge.CompactLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

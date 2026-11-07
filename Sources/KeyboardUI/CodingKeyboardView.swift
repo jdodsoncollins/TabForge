@@ -921,7 +921,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         bottom.append(makeKey("Tab", symbol: "arrow.right.to.line", .tab, utility: true))
         bottom.append(makeKey("space", .space, weight: isCompactHeight || layout == .compact ? 3.5 : 6))
         if !isCompactHeight { bottom.append(makeKey(".", .text("."))) }
-        if !isCompactHeight && layout != .compact {
+        // On the narrowest wide layout the globe would squeeze five keys to
+        // about 31 pt, so the arrows stay in the toolbar when it has both.
+        let toolbarArrows = Set(preferences.settings.toolbarKeys.prefix(ToolbarKey.maximumCount)).isSuperset(of: [.left, .right])
+        if !isCompactHeight && layout != .compact && !(layout == .widePhone && builtWithGlobe && toolbarArrows) {
             bottom += [makeKey("Left", symbol: "arrow.left", .navigation(.left), utility: true), makeKey("Right", symbol: "arrow.right", .navigation(.right), utility: true)]
         }
         let returnLabel = isEditingSnippet ? nil : engine.document.returnKeyLabel
@@ -1015,7 +1018,6 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if !isCompactHeight { arrangeToolbar() }
         if isCompactHeight && statusLabel.superview !== self { addSubview(statusLabel) }
         if !isCompactHeight && statusLabel.superview !== toolbar { toolbar.addSubview(statusLabel) }
-        if isCompactHeight { statusLabel.frame = CGRect(x: safeAreaInsets.left + 8, y: contentTop, width: max(0, usableWidth - 16), height: 44) }
         // Hosts can compress input views during rotations and keyboard transitions.
         let toolbarHeight: CGFloat = isCompactHeight ? 0 : 44
         let gap: CGFloat = isCompactHeight ? 4 : 6
@@ -1027,6 +1029,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             var rect = CGRect(x: safeAreaInsets.left + 5, y: contentTop + toolbarHeight + 2 + CGFloat(index) * (height + gap), width: max(0, usableWidth - 10), height: height)
             if !functionLayer, !numbers, (isCompactHeight || layout == .compact), row.count == 9 { rect = rect.insetBy(dx: rect.width * 0.045, dy: 0) }
             arrange(row, in: rect)
+        }
+        if isCompactHeight, let space = rows.last?.first(where: { $0.action == .space }) {
+            // Without the toolbar, messages sit over the space bar, at least
+            // 240 pt wide for two lines, so the letters stay in view.
+            // Touches pass through to the keys below.
+            let row = CGRect(x: safeAreaInsets.left + 5, y: space.frame.minY, width: max(0, usableWidth - 10), height: space.frame.height)
+            let width = min(row.width, max(space.frame.width, 240))
+            statusLabel.frame = CGRect(x: min(max(row.minX, space.frame.midX - width / 2), row.maxX - width), y: row.minY, width: width, height: row.height)
         }
         var elements: [Any] = []
         if let snippetPanel { elements.append(snippetPanel) }

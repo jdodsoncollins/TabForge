@@ -37,6 +37,8 @@
 	<string>Record speech when you start voice-to-code in the playground.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Turn your speech into code in the playground using on-device recognition.</string>
+	<key>TabForgeAppGroup</key>
+	<string>$(TABFORGE_APP_GROUP)</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchScreen</key>

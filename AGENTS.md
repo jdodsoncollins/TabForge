@@ -11,7 +11,7 @@ TabForge is a native iOS/iPadOS programming keyboard. A keyboard handles sensiti
 - `Tests/KeyboardCoreTests`: Swift package tests. `UnitTests`: hosted UIKit tests. `UITests`: app UI flows.
 - `project.yml`: XcodeGen source of truth. Regenerate `ScriptKeyboard.xcodeproj` after changing targets, files, or build settings.
 
-Use Xcode 27.1 or later with Swift 6. The deployment minimum is iOS/iPadOS 27.0; Duo-specific APIs must remain guarded by availability checks for 27.1. Use your own signing team, bundle identifiers and provisioning for device builds. Copy `.env.example` to ignored `.env`, then run `python3 Scripts/configure-build.py` to generate the ignored local Xcode configuration. The keyboard does not request Full Access or use an App Group. Keep signing credentials and local signing overrides out of version control.
+Use Xcode 27.1 or later with Swift 6. The deployment minimum is iOS/iPadOS 27.0; Duo-specific APIs must remain guarded by availability checks for 27.1. Use your own signing team, bundle identifiers and provisioning for device builds. Copy `.env.example` to ignored `.env`, then run `python3 Scripts/configure-build.py` to generate the ignored local Xcode configuration. The keyboard does not request Full Access. The app and keyboard share an App Group (`TABFORGE_APP_GROUP`) that only the app writes. Keep signing credentials and local signing overrides out of version control.
 
 ## Build and verification
 
@@ -50,8 +50,9 @@ Input and layout changes need coverage across a narrow phone, landscape phone, i
 ## Privacy and dependencies
 
 - Never log, transmit, analyze, or persist host typing, surrounding text, selected text, swipe traces, speech audio, transcripts, or supplementary lexicon entries for diagnostics or model training.
-- Existing deliberate storage is limited to the keyboard extension's local preferences/snippets and the companion playground draft. The companion's keyboard/layout preview settings and snippets stay only in memory; do not persist them or synchronize them with the extension. Document any intentional change to storage, permissions, or data flow in the same change.
-- Do not request Full Access, add App Group access, or share keyboard records with the companion app. Preserve the existing keyboard-local record without importing or erasing older App Group or companion preference records.
+- Existing deliberate storage is limited to the keyboard extension's local preferences/snippets, the companion's shared keyboard settings file in the App Group, and the companion playground draft. Document any intentional change to storage, permissions, or data flow in the same change.
+- The companion writes keyboard settings and snippets to the shared file; the keyboard only reads it and merges per field and per snippet (`SettingsRecord`). Never write to the App Group from the extension, and never put host text, typing context, tap offsets, the playground draft, or Full Access opt-ins in the shared file. Preserve the existing keyboard-local record without importing or erasing records from builds before 11 or older companion preferences.
+- Do not request Full Access. Route any feature that would need it through `FullAccessFeature` and `KeyboardCapabilities`, keep it off until the person turns it on in the keyboard, and keep the keyboard fully usable without it. Requesting Full Access is a privacy change that must update PRIVACY.md, the website policy and `KeyboardCapabilities.requestsFullAccess` together.
 - Keep snippet drafts in a separate local buffer. Editing or cancelling a snippet must not modify the host document; inserting a saved snippet is a separate user action.
 - Do not add analytics, advertising, remote configuration, cloud spelling, or a cloud speech fallback. User-initiated external links and Apple system features must remain clearly identified.
 - Keep speech recording in the companion app, explicitly initiated by the user, with on-device recognition required and cleanup on cancellation, interruption, backgrounding, and dismissal.

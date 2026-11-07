@@ -6,10 +6,23 @@ struct ScriptKeyboardApp: App {
     @State private var preferences: PreferencesStore
     @State private var tipStore = TipStore()
     init() {
-        if ProcessInfo.processInfo.arguments.contains("--uitesting") {
+        let uiTesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
+        if uiTesting {
             UserDefaults.standard.removeObject(forKey: "playground.draft")
         }
-        _preferences = State(initialValue: PreferencesStore(local: nil))
+        _preferences = State(initialValue: PreferencesStore(local: nil, sharing: Self.sharing(uiTesting: uiTesting)))
+    }
+
+    /// The app's keyboard settings are the copy it shares with the keyboard,
+    /// so the Playground, Layouts and Themes configure TabForge in other apps.
+    /// UI tests use a fresh temporary file and never change the installed keyboard.
+    private static func sharing(uiTesting: Bool) -> PreferencesStore.Sharing {
+        guard !uiTesting else {
+            let url = URL.temporaryDirectory.appending(path: "ui-testing-" + SharedSettingsFile.fileName, directoryHint: .notDirectory)
+            try? FileManager.default.removeItem(at: url)
+            return .publish(SharedSettingsFile(url: url))
+        }
+        return SharedSettingsFile.appGroup().map(PreferencesStore.Sharing.publish) ?? .off
     }
     var body: some Scene {
         WindowGroup {

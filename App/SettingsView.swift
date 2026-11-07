@@ -6,7 +6,18 @@ struct SettingsView: View {
     private static let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(PreferencesStore.self) private var preferences
     @State private var showSetup = false
+
+    private var keyboardSettingsNote: String {
+        if !preferences.sharesWithKeyboard {
+            return "This build can’t share settings with the keyboard, so changes in this app last until it closes. Use the gear on TabForge in other apps for its saved settings."
+        }
+        if preferences.sharingFailed {
+            return "TabForge couldn’t save your latest changes for the keyboard. Try the change again; the keyboard keeps its current settings until then."
+        }
+        return "Change settings and snippets with the gear on the Playground keyboard, in Layouts, or in Themes. TabForge in other apps picks them up the next time it opens. Changes made with the gear in other apps stay in that keyboard: without Full Access it can read this app’s settings but can’t send its own back."
+    }
 
     var body: some View {
         Form {
@@ -26,14 +37,20 @@ struct SettingsView: View {
             }
             Section {
                 Button("Set up in other apps", systemImage: "keyboard.badge.ellipsis") { showSetup = true }
-                Text("TabForge does not request Full Access. Open the keyboard’s gear to change its settings and manage snippets. Those choices stay in the keyboard’s own local storage.")
+                Text(keyboardSettingsNote)
                     .font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("settings.sharingStatus")
             } header: { Text("Keyboard setup") }
+            Section {
+                ForEach(FullAccessFeature.allCases, id: \.self) { feature in
+                    DescribedSettingsRow(title: feature.title, detail: feature.detail, symbol: Self.symbol(for: feature))
+                }
+            } header: { Text("Full Access") } footer: {
+                Text("TabForge doesn’t request Full Access, and every other feature works without it. If a later version asks for it, each feature that needs it will stay off until you turn it on in the keyboard.")
+            }
             Section("Help") {
                 NavigationLink { SmartInputInfoView() } label: { Label("Voice, swipe & Apple Intelligence", systemImage: "waveform") }
                 NavigationLink { CompatibilityInfoView() } label: { Label("Terminal & remote compatibility", systemImage: "terminal") }
-                Text("The Playground and Layouts are previews. Their settings and snippets are temporary and separate from the keyboard you enable in other apps.")
-                    .font(.footnote).foregroundStyle(.secondary)
             }
             Section {
                 NavigationLink { OpenSourceLicensesView() } label: {
@@ -59,7 +76,7 @@ struct SettingsView: View {
             Section {
                 LabeledContent("Version", value: Self.appVersion)
                 LabeledContent("Requires", value: "iOS / iPadOS 27.0")
-                Text("The keyboard extension does not log or transmit keystrokes. TabForge saves your playground draft, preferences, and snippets locally. Apps you type into and Apple’s system services follow their own privacy policies.")
+                Text("The keyboard extension does not log or transmit keystrokes. TabForge saves your playground draft, preferences, and snippets on this device. Apps you type into and Apple’s system services follow their own privacy policies.")
                     .font(.footnote).foregroundStyle(.secondary)
             } header: { Text("About TabForge") }
             Section {
@@ -126,6 +143,12 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .sheet(isPresented: $showSetup) { SetupView() }
+    }
+
+    private static func symbol(for feature: FullAccessFeature) -> String {
+        switch feature {
+        case .haptics: "iphone.radiowaves.left.and.right"
+        }
     }
 }
 
@@ -323,7 +346,7 @@ struct CompatibilityInfoView: View {
                 Text("Delete line requires visible line boundaries, or the full document in the playground. If a host hides a boundary, select the line and use ordinary Delete. Terminal mode exposes Ctrl-U and Ctrl-K instead; shell key mappings determine what they clear. Remote desktop mode leaves line editing to the client.")
             }
             Section("Keyboard settings") {
-                Text("Open the gear on TabForge to change keyboard preferences and manage snippets. The keyboard saves those choices locally without Full Access. The companion app’s Playground and Layouts use separate, temporary preview settings.")
+                Text("Change keyboard preferences and snippets with the gear on TabForge, in this app or in others. The keyboard saves them on this device without Full Access and picks up changes made in this app the next time it opens.")
             }
         }.navigationTitle("Compatibility").navigationBarTitleDisplayMode(.inline)
     }

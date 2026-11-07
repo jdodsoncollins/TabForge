@@ -24,7 +24,9 @@ struct PlaygroundView: View {
                     .background(Color(uiColor: ScriptTheme.accent).opacity(0.1), in: .rect(cornerRadius: 12))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Try the keyboard in the playground").font(.headline)
-                    Text("Preview changes last for this app session. Use the keyboard’s gear in other apps for its saved settings.")
+                    Text(preferences.sharesWithKeyboard
+                         ? "Settings and snippets you change here also apply to TabForge in other apps."
+                         : "Changes here last until the app closes. Use the keyboard’s gear in other apps for its saved settings.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -121,7 +123,7 @@ struct SetupView: View {
                 Section {
                     Label("Your coding keyboard, in other apps.", systemImage: "keyboard")
                         .font(.headline).padding(.vertical, 8)
-                    Text("The playground includes a keyboard preview. Its changes and snippets last for this app session. Enable the extension to use TabForge in editors, terminals, and remote sessions.")
+                    Text("The playground includes a keyboard preview. Settings and snippets you change there also apply to the TabForge keyboard. Enable the extension to use TabForge in editors, terminals, and remote sessions.")
                         .foregroundStyle(.secondary)
                 }
                 Section("Enable TabForge") {
@@ -131,8 +133,8 @@ struct SetupView: View {
                     Link(destination: URL(string: UIApplication.openSettingsURLString)!) { Label("Open Settings", systemImage: "arrow.up.forward.app") }
                 }
                 Section("Keyboard settings") {
-                    Text("Select TabForge in a text field, then tap its gear to change preferences and edit snippets. Settings are saved in the keyboard. Full Access is not requested.")
-                    Text("The companion preview does not change your installed keyboard’s settings.")
+                    Text("Change preferences and snippets with the gear on the Playground keyboard, or on TabForge in any app. Full Access is not requested.")
+                    Text("The keyboard picks up changes made in this app the next time it opens. Changes made in the keyboard stay there, because without Full Access it can’t send them back to this app.")
                         .foregroundStyle(.secondary)
                 }
                 Section("App compatibility") {

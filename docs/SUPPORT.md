@@ -8,11 +8,9 @@ Do not post passwords, private code, transcripts, contact names, account details
 
 1. Open iOS Settings → General → Keyboard → Keyboards → Add New Keyboard, then choose TabForge.
 2. In a text field, hold the globe key and select TabForge.
-3. Tap the keyboard's gear for editing tools, quick preferences, complete keyboard settings, and custom snippet management. Configure the installed keyboard there.
+3. Tap the keyboard's gear for editing tools, quick preferences, complete keyboard settings, and custom snippet management. Configure the installed keyboard there, or with the same gear on the companion Playground keyboard.
 
-This version does not request Full Access or use an App Group. Its preferences and custom snippets stay in the keyboard's own container. The companion app provides setup, source/privacy information, licenses, and a playground; it does not configure the installed keyboard.
-
-The companion's keyboard and layout guide are previews. Their settings and snippets are temporary and discarded when that app process ends. The playground draft is still saved separately.
+This version does not request Full Access. Its preferences and custom snippets stay in the keyboard's own container. Settings and snippets you change in the companion app are saved in a container the app shares with the keyboard; the keyboard reads them, and never writes there, the next time it opens. The playground draft is saved separately and is not shared.
 
 ## Common questions
 
@@ -30,7 +28,9 @@ The companion's keyboard and layout guide are previews. Their settings and snipp
 
 **A previous snippet or setting is missing after the update.** The update retains an existing keyboard-local record. It does not read or transfer old App Group or companion-only keyboard records. If a value was saved only in one of those old locations, recreate it from the installed keyboard's gear menu. Legacy records are not erased by this change, and their presence does not mean the new version can access them. Do not post a private snippet in a support request.
 
-**A preview change does not affect my keyboard in another app.** This is intentional. The companion preview uses independent temporary settings. Change the installed keyboard from its own gear menu.
+**A change in the companion app does not show in my keyboard.** The keyboard reads the app's changes when it opens, so close it and open it again. If you changed the same setting in the keyboard more recently, the keyboard keeps its own choice. Changes made in the keyboard are not sent back to the app, because a keyboard without Full Access can't write to the shared container. If Settings in the app says it couldn't save, try the change again.
+
+**Haptic feedback is unavailable.** iOS lets a keyboard vibrate only with Full Access, which TabForge doesn't request. Key click sounds work without it and follow Sounds › Keyboard Clicks in iOS Settings.
 
 ## Include this in a bug report
 

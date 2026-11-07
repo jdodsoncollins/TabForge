@@ -100,6 +100,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     var isEditingSnippet: Bool { snippetDraft != nil }
     var onSnippetEditingChanged: ((Bool) -> Void)?
     var isPreview = false { didSet { if oldValue != isPreview { updateMenus() } } }
+    /// Whether the person granted Full Access. TabForge does not request it,
+    /// so this stays false in shipping builds.
+    var hasFullAccess = false { didSet { if oldValue != hasFullAccess { updateMenus() } } }
+    /// Previews run as app code; the extension needs Full Access, and the
+    /// person's opt-in, for each feature in `FullAccessFeature`.
+    private var capabilities: KeyboardCapabilities {
+        KeyboardCapabilities(host: isPreview ? .companionApp : .keyboardExtension(hasFullAccess: hasFullAccess))
+    }
     var onNextKeyboard: (() -> Void)?
     var onInputModeEvent: ((UIView, UIEvent) -> Void)?
     var onOpenSettings: (() -> Void)?
@@ -636,7 +644,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         selectAlternate(min(max(underKey, 0), options.count - 1))
         // A callout that opens after the finger already slid away selects nothing.
         if let alternatesTouch, alternateIndex(at: alternatesTouch) == nil { selectAlternate(nil) }
-        if preferences.settings.haptics { feedback?.generator.impactOccurred(intensity: 0.6) }
+        if capabilities.allows(.haptics, in: preferences.settings) { feedback?.generator.impactOccurred(intensity: 0.6) }
     }
     private func selectAlternate(_ index: Int?) {
         guard var popup = alternatesPopup else { return }
@@ -689,7 +697,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private func playKeyFeedback() {
         let settings = preferences.settings
         if settings.keyClicks { UIDevice.current.playInputClick() }
-        guard settings.haptics else { feedback = nil; return }
+        guard capabilities.allows(.haptics, in: settings) else { feedback = nil; return }
         // Reuse one generator per strength rather than creating one per key.
         if feedback?.strength != settings.hapticStrength {
             let style: UIImpactFeedbackGenerator.FeedbackStyle = switch settings.hapticStrength {
@@ -1457,6 +1465,17 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         onSnippetEditingChanged?(false)
     }
 
+    private var storageDescription: String {
+        if isPreview {
+            return preferences.sharesWithKeyboard
+                ? "Changes here also apply to TabForge in other apps"
+                : "Changes here last until the app closes"
+        }
+        return preferences.readsFromApp
+            ? "Saved in this keyboard, with changes from the TabForge app. Full Access is not requested."
+            : "Saved in this keyboard. Full Access is not requested."
+    }
+
     private func updateMenus() {
         let settings = preferences.settings
         let terminal = engine.settings.compatibility == .terminal
@@ -1492,7 +1511,32 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 self.applySettings()
             }
         autocorrect.subtitle = "On Space in supported prose fields. Delete immediately to undo."
+        let hapticsAllowed = capabilities.allows(.haptics, in: settings)
+        let haptics: UIAction
+        if isPreview {
+            haptics = toggle("Haptic feedback", \.haptics)
+            haptics.subtitle = "In this app. In other apps, the keyboard needs Full Access to vibrate."
+        } else {
+            // Without Full Access iOS ignores a keyboard's haptics, so say so
+            // instead of offering a switch that does nothing.
+            haptics = UIAction(title: FullAccessFeature.haptics.title, attributes: hasFullAccess ? [] : .disabled,
+                               state: hapticsAllowed ? .on : .off) { [weak self] _ in
+                guard let self, self.hasFullAccess else { return }
+                self.preferences.settings.enabledFullAccessFeatures.formSymmetricDifference([.haptics])
+                self.applySettings()
+            }
+            haptics.subtitle = hasFullAccess
+                ? "Uses Full Access. Off until you turn it on."
+                : "Needs Full Access, which TabForge doesn’t request. Key click sounds work without it."
+        }
         tapLearning.subtitle = "Sharpens autocorrect. Stays on this device; turning it off erases it."
+        let resetAction = UIAction(title: "Reset keyboard preferences and snippets", attributes: .destructive) { [weak self] _ in
+            guard let self, self.activeKeyPresses.isEmpty, self.keyPresses.isEmpty else { return }
+            self.preferences.reset(); self.applySettings(); self.showStatus("Keyboard preferences and snippets reset")
+        }
+        if isPreview && preferences.sharesWithKeyboard {
+            resetAction.subtitle = "Also resets TabForge in other apps the next time it opens."
+        }
         let enabledToolbarKeys = settings.toolbarKeys
         let toolbarKeys = UIMenu(title: "Toolbar keys", children: ToolbarKey.allCases.map { key in
             let on = enabledToolbarKeys.contains(key)
@@ -1558,9 +1602,9 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 toggle("Key press previews", \.keyPreviews), toolbarKeys
             ]),
             UIMenu(title: "Gestures & feedback", children: [
-                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Key click sounds", \.keyClicks), toggle("Haptic feedback", \.haptics),
+                toggle("Drag space to move cursor", \.cursorScrubbing), toggle("Hold Delete to repeat", \.repeatDelete), toggle("Key click sounds", \.keyClicks), haptics,
                 UIMenu(title: "Haptic strength", children: HapticStrength.allCases.map { strength in
-                    UIAction(title: strength.rawValue, attributes: settings.haptics ? [] : .disabled, state: settings.hapticStrength == strength ? .on : .off) { [weak self] _ in
+                    UIAction(title: strength.rawValue, attributes: hapticsAllowed ? [] : .disabled, state: settings.hapticStrength == strength ? .on : .off) { [weak self] _ in
                         self?.preferences.settings.hapticStrength = strength; self?.applySettings()
                     }
                 })
@@ -1570,15 +1614,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 toggle("Delete sends DEL instead of BS", \.terminalDeleteIsDEL), toggle("Application cursor mode (SS3)", \.terminalApplicationCursor)
             ]),
             UIMenu(title: "Reset settings & snippets", image: UIImage(systemName: "arrow.counterclockwise"), children: [
-                UIAction(title: "Reset keyboard preferences and snippets", attributes: .destructive) { [weak self] _ in
-                    guard let self, self.activeKeyPresses.isEmpty, self.keyPresses.isEmpty else { return }
-                    self.preferences.reset(); self.applySettings(); self.showStatus("Keyboard preferences and snippets reset")
-                }
+                resetAction
             ]),
             UIMenu(options: .displayInline, children: [
-                UIAction(title: isPreview ? "About this preview" : "Stored in this keyboard", image: UIImage(systemName: "info.circle")) { [weak self] _ in
+                UIAction(title: isPreview ? "About these settings" : "Where settings are stored", image: UIImage(systemName: "info.circle")) { [weak self] _ in
                     guard let self else { return }
-                    self.showStatus(self.isPreview ? "Changes and snippets stay in this preview until the app closes" : "Preferences and snippets stay in this keyboard. Full Access is not requested.")
+                    self.showStatus(self.storageDescription)
                 },
                 UIAction(title: "Use system keyboard / dictation", image: UIImage(systemName: "globe")) { [weak self] _ in self?.onNextKeyboard?() },
                 UIAction(title: "Dismiss keyboard", image: UIImage(systemName: "keyboard.chevron.compact.down")) { [weak self] _ in self?.onDismiss?() }

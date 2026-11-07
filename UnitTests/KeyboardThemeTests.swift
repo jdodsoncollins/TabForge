@@ -287,13 +287,49 @@ struct KeyboardThemeTests {
     func paletteTextHasReadableContrast(_ theme: KeyboardTheme, _ style: UIUserInterfaceStyle) {
         let palette = KeyboardPalette.resolve(theme)
         let traits = UITraitCollection(userInterfaceStyle: style)
+        // Translucent iOS Standard fills are measured over the keyboard material.
         for (foreground, background) in [
             (palette.text, palette.key), (palette.text, palette.utility),
             (palette.secondary, palette.key), (palette.accent, palette.key),
-            (palette.accent, palette.background)
+            (palette.text, palette.backdrop), (palette.accent, palette.callout),
+            (palette.text, palette.callout), (palette.onAccent, palette.accent)
         ] {
-            #expect(contrast(foreground, background, traits: traits) >= 4.5)
+            #expect(contrast(foreground, background, over: palette.backdrop, traits: traits) >= 4.5)
         }
+        if let fill = palette.primaryAction {
+            #expect(contrast(.white, fill, over: palette.backdrop, traits: traits) >= 3)
+        }
+    }
+
+    @Test(arguments: KeyboardTheme.allCases)
+    func systemThemeShowsTheKeyboardMaterialAndFollowsTheHost(_ theme: KeyboardTheme) throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.theme = theme
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        let palette = KeyboardPalette.resolve(theme)
+        func alpha(_ color: UIColor?) -> CGFloat {
+            color?.resolvedColor(with: keyboard.traitCollection).cgColor.alpha ?? 0
+        }
+        // A preview has nothing behind it, so it paints an opaque stand-in.
+        #expect(alpha(keyboard.backgroundColor) == 1)
+        let input = UIInputView(frame: CGRect(x: 0, y: 0, width: 390, height: 300), inputViewStyle: .keyboard)
+        input.addSubview(keyboard)
+        // Inside a keyboard input view, iOS Standard lets the system material show.
+        #expect(alpha(keyboard.backgroundColor) == (palette.matchesSystem ? 0 : 1))
+        #expect(keyboard.isOpaque == !palette.matchesSystem)
+        keyboard.removeFromSuperview()
+        #expect(alpha(keyboard.backgroundColor) == 1)
+
+        keyboard.hostKeyboardAppearance = .dark
+        #expect(keyboard.overrideUserInterfaceStyle == .dark)
+        keyboard.hostKeyboardAppearance = .default
+        #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
+        preferences.settings.appearance = .light
+        keyboard.applySettings()
+        keyboard.hostKeyboardAppearance = .dark
+        // An explicit choice in TabForge wins over the host's request.
+        #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .light))
     }
 
     @Test(arguments: KeyboardTheme.allCases)
@@ -309,7 +345,7 @@ struct KeyboardThemeTests {
         #expect(document.cursor == 4)
         #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
         #expect(keyboard.backgroundColor?.resolvedColor(with: keyboard.traitCollection)
-                == KeyboardPalette.resolve(theme).background.resolvedColor(with: keyboard.traitCollection))
+                == KeyboardPalette.resolve(theme).background(hostedBySystemKeyboard: false).resolvedColor(with: keyboard.traitCollection))
         let restored = PreferencesStore(local: try #require(UserDefaults(suiteName: suite)))
         #expect(restored.settings.theme == theme)
         preferences.settings.theme = .standard
@@ -349,17 +385,21 @@ struct KeyboardThemeTests {
         return (PreferencesStore(local: defaults), suite)
     }
 
-    private func contrast(_ foreground: UIColor, _ background: UIColor, traits: UITraitCollection) -> Double {
-        func luminance(_ color: UIColor) -> Double {
+    /// Contrast of opaque text over a fill, after compositing a translucent
+    /// fill over the opaque backing it is drawn on.
+    private func contrast(_ foreground: UIColor, _ background: UIColor, over backing: UIColor, traits: UITraitCollection) -> Double {
+        func components(_ color: UIColor) -> [Double] {
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
             color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            func linear(_ channel: CGFloat) -> Double {
-                let value = Double(channel)
-                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
-            }
-            return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+            return [red, green, blue, alpha].map(Double.init)
         }
-        let a = luminance(foreground), b = luminance(background)
+        func luminance(_ rgb: [Double]) -> Double {
+            let linear = rgb.prefix(3).map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let base = components(backing), fill = components(background)
+        let composite = (0..<3).map { fill[$0] * fill[3] + base[$0] * (1 - fill[3]) }
+        let a = luminance(components(foreground)), b = luminance(composite)
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
 }

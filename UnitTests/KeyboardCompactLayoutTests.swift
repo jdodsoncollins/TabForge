@@ -383,9 +383,16 @@ struct KeyboardCompactLayoutTests {
         layout(keyboard, in: CGSize(width: 390, height: 844))
         let send = try button("Return", in: keyboard)
         #expect(send.accessibilityLabel == "Send")
+        // Like the system keyboard, an action title fills the key.
+        #expect(send.backgroundColor == .systemBlue)
+        document.returnKeyLabel = "Next"
+        keyboard.refreshContext()
+        #expect(try button("Return", in: keyboard).backgroundColor != .systemBlue)
         document.returnKeyLabel = nil
         keyboard.refreshContext()
-        #expect(try button("Return", in: keyboard).accessibilityLabel == "Return")
+        let plain = try button("Return", in: keyboard)
+        #expect(plain.accessibilityLabel == "Return")
+        #expect(plain.backgroundColor != .systemBlue)
     }
 
     @Test(arguments: [375.0, 440, 1024])

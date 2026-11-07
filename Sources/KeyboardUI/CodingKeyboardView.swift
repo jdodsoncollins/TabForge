@@ -971,15 +971,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if let size = sceneSize, window?.windowScene?.effectiveGeometry.interfaceOrientation.isLandscape == true, size.width < size.height {
             sceneSize = CGSize(width: size.height, height: size.width)
         }
-        // An extension may get no scene geometry. Fall back to the screen,
-        // turned to match the keyboard, which spans the screen's long side
-        // only in landscape.
-        var screenSize = window?.windowScene?.screen.bounds.size ?? window?.screen.bounds.size
-        if let size = screenSize {
-            let short = min(size.width, size.height), long = max(size.width, size.height)
-            screenSize = bounds.width > short + 1 ? CGSize(width: long, height: short) : CGSize(width: short, height: long)
-        }
-        let hostSize = availableHostSize ?? sceneSize ?? screenSize
+        let hostSize = availableHostSize ?? sceneSize
         let roomChanged = ((hostHeight ?? .infinity) >= 760) != ((hostSize?.height ?? .infinity) >= 760)
         hostHeight = hostSize?.height
         let previouslyPreferredCompact = prefersCompactHeight

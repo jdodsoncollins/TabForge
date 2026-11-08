@@ -302,7 +302,7 @@ struct KeyboardThemeTests {
     }
 
     @Test(arguments: KeyboardTheme.allCases)
-    func systemThemeShowsTheKeyboardMaterialAndFollowsTheHost(_ theme: KeyboardTheme) throws {
+    func systemThemeShowsTheKeyboardMaterialAndFollowsLiveAppearance(_ theme: KeyboardTheme) throws {
         let (preferences, suite) = try store()
         defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
         preferences.settings.theme = theme
@@ -321,15 +321,23 @@ struct KeyboardThemeTests {
         keyboard.removeFromSuperview()
         #expect(alpha(keyboard.backgroundColor) == 1)
 
-        keyboard.hostKeyboardAppearance = .dark
-        #expect(keyboard.overrideUserInterfaceStyle == .dark)
-        keyboard.hostKeyboardAppearance = .default
+        // The System appearance never pins a style, so the keys follow the
+        // system glass when the device switches modes with the keyboard open.
         #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
-        preferences.settings.appearance = .light
-        keyboard.applySettings()
-        keyboard.hostKeyboardAppearance = .dark
-        // An explicit choice in TabForge wins over the host's request.
-        #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .light))
+        input.addSubview(keyboard)
+        keyboard.hostContextDidChange()
+        #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
+        keyboard.frame = input.bounds
+        keyboard.layoutIfNeeded()
+        let q = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "key.q" })
+        for style in [UIUserInterfaceStyle.dark, .light] {
+            input.overrideUserInterfaceStyle = style
+            keyboard.updateTraitsIfNeeded()
+            let expected = theme.usesDarkPalette ? UIUserInterfaceStyle.dark : style
+            #expect(keyboard.traitCollection.userInterfaceStyle == expected)
+            #expect(q.backgroundColor?.resolvedColor(with: keyboard.traitCollection)
+                    == palette.key.resolvedColor(with: UITraitCollection(userInterfaceStyle: expected)))
+        }
     }
 
     @Test(arguments: KeyboardTheme.allCases)

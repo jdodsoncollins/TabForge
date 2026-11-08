@@ -466,20 +466,13 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     /// Short screens (an iPhone SE or a closed Duo) trade 6 pt per row for
     /// editor space; the chosen key size still orders the three options.
     private var rowKeyHeight: CGFloat { preferences.settings.keySize.height - (isShortHost ? 6 : 0) }
-    /// The host field's requested keyboard appearance. Under the System
-    /// appearance, a field that asks for a dark (or light) keyboard gets one, as
-    /// it would from the system keyboard.
-    var hostKeyboardAppearance: UIKeyboardAppearance = .default {
-        didSet { if oldValue != hostKeyboardAppearance { applyAppearance() } }
-    }
+    /// The System appearance follows the trait collection iOS gives the
+    /// keyboard, which changes live with the system keyboard's glass. Pinning a
+    /// style from the host's `keyboardAppearance` went stale when the device
+    /// switched between light and dark with the keyboard open.
     private func applyAppearance() {
         switch preferences.settings.theme.usesDarkPalette ? .dark : preferences.settings.appearance {
-        case .system:
-            switch hostKeyboardAppearance {
-            case .dark: overrideUserInterfaceStyle = .dark
-            case .light: overrideUserInterfaceStyle = .light
-            default: overrideUserInterfaceStyle = .unspecified
-            }
+        case .system: overrideUserInterfaceStyle = .unspecified
         case .light: overrideUserInterfaceStyle = .light
         case .dark: overrideUserInterfaceStyle = .dark
         }
@@ -955,12 +948,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             ?? makeKey("Return", symbol: "return", .enter, weight: 1.5, utility: true)
         // Keep one identifier whatever the host's title.
         enter.accessibilityIdentifier = "key.Return"
-        // The system keyboard fills the return key when it names an action.
-        if let fill = palette.primaryAction, let returnLabel, returnLabel != "Next" {
-            enter.baseColor = fill; enter.backgroundColor = fill
-            enter.highlightColor = fill.withAlphaComponent(0.6)
-            enter.legend.textColor = .white; enter.tintColor = .white
-        }
+        returnKeyFilled = nil
         bottom.append(enter)
         // The outer bottom corners follow the display's rounded corners.
         let radius = keyCornerRadius
@@ -969,6 +957,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         bottom.last?.cornerConfiguration = .corners(topLeftRadius: .fixed(radius), topRightRadius: .fixed(radius),
             bottomLeftRadius: .fixed(radius), bottomRightRadius: .containerConcentric(minimum: radius))
         rows.append(bottom)
+        updateReturnKeyFill()
         updateLetterLegends()
         updateKeyFonts()
         updateModifierButtons()
@@ -1381,17 +1370,13 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     /// The host changed its text, selection or field: re-evaluate sentence
     /// capitals before refreshing suggestions and the return key.
     func hostContextDidChange() {
-        // In the extension, the controller exposes the host field's traits.
-        if let controller = extensionController {
-            hostKeyboardAppearance = controller.textDocumentProxy.keyboardAppearance ?? .default
-        }
         updateAutoCapitalization()
         refreshContext()
     }
 
     func refreshContext() {
         if let draft = snippetDraft { snippetPanel?.update(draft); return }
-        if engine.document.returnKeyLabel != displayedReturnLabel { rebuild() }
+        if engine.document.returnKeyLabel != displayedReturnLabel { rebuild() } else { updateReturnKeyFill() }
         if preferences.settings.autocorrectProse { engine.validateAutocorrectionContext() }
         // Suggestions remain available in the shared tools and settings menu,
         // leaving a toolbar slot for the dedicated Escape key.
@@ -1855,16 +1840,31 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
     }
     private func stopDeleting() { deleteTask?.cancel(); deleteTask = nil }
+    /// Whether the return key currently shows the primary-action fill.
+    private var returnKeyFilled: Bool?
+    /// Like the system keyboard, fill the return key when the host names an
+    /// action (Go, Search, Send…), except while a field that enables its return
+    /// key automatically is still empty: Apple's key is grey there.
+    private func updateReturnKeyFill() {
+        guard let enter = rows.last?.first(where: { $0.action == .enter }) else { return }
+        var fill: UIColor?
+        if let primary = palette.primaryAction, let label = displayedReturnLabel, label != "Next" {
+            let document = engine.document
+            let empty = document.returnKeyRequiresText && document.selectedText == nil
+                && (document.contextBeforeInput(maximumCharacters: 1) ?? "").isEmpty
+                && (document.contextAfterInput(maximumCharacters: 1) ?? "").isEmpty
+            fill = empty ? nil : primary
+        }
+        guard returnKeyFilled != (fill != nil) else { return }
+        returnKeyFilled = fill != nil
+        enter.baseColor = fill ?? palette.utility
+        enter.highlightColor = fill?.withAlphaComponent(0.6) ?? palette.pressed
+        if !enter.isHighlighted { enter.backgroundColor = enter.baseColor }
+        let foreground = fill == nil ? palette.text : .white
+        enter.legend.textColor = foreground; enter.tintColor = foreground
+    }
     /// A keyboard-style input view (the extension's, or the playground's) sits
     /// on the system keyboard's own material; previews elsewhere do not.
-    private var extensionController: UIInputViewController? {
-        var responder = next
-        while let current = responder {
-            if let controller = current as? UIInputViewController { return controller }
-            responder = current.next
-        }
-        return nil
-    }
     private var hostedBySystemKeyboard: Bool {
         (superview as? UIInputView)?.inputViewStyle == .keyboard
     }

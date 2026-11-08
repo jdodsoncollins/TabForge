@@ -385,6 +385,18 @@ struct KeyboardCompactLayoutTests {
         #expect(send.accessibilityLabel == "Send")
         // Like the system keyboard, an action title fills the key.
         #expect(send.backgroundColor == .systemBlue)
+        // A field that enables its return key automatically keeps it grey,
+        // like Apple's, until it has text.
+        document.returnKeyRequiresText = true
+        keyboard.refreshContext()
+        #expect(send.backgroundColor != .systemBlue)
+        #expect(send.superview === keyboard)
+        try tap("h", in: keyboard)
+        #expect(send.backgroundColor == .systemBlue)
+        try tap("Delete", in: keyboard)
+        #expect(document.text.isEmpty)
+        #expect(send.backgroundColor != .systemBlue)
+        document.returnKeyRequiresText = false
         document.returnKeyLabel = "Next"
         keyboard.refreshContext()
         #expect(try button("Return", in: keyboard).backgroundColor != .systemBlue)

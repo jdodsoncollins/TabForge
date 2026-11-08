@@ -21,6 +21,7 @@ final class TextViewDocument: TextDocument {
             keyboardType: view.keyboardType, secure: view.isSecureTextEntry)
     }
     var returnKeyLabel: String? { HostProseTraits.label(for: textView?.returnKeyType) }
+    var returnKeyRequiresText: Bool { textView?.enablesReturnKeyAutomatically == true }
     var before: String? {
         guard let view = textView else { return nil }
         return (view.text as NSString).substring(to: view.selectedRange.location)
@@ -123,6 +124,7 @@ final class ProxyDocument: TextDocument {
             keyboardType: proxy.keyboardType, secure: proxy.isSecureTextEntry)
     }
     var returnKeyLabel: String? { HostProseTraits.label(for: controller?.textDocumentProxy.returnKeyType) }
+    var returnKeyRequiresText: Bool { controller?.textDocumentProxy.enablesReturnKeyAutomatically == true }
     var before: String? { controller?.textDocumentProxy.documentContextBeforeInput }
     var after: String? { controller?.textDocumentProxy.documentContextAfterInput }
     var selectedText: String? { controller?.textDocumentProxy.selectedText }

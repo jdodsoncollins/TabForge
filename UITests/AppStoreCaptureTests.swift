@@ -80,6 +80,92 @@ final class AppStoreCaptureTests: XCTestCase {
         }
     }
 
+    /// Drives the real keys for an App Store preview while `simctl io
+    /// recordVideo` records the screen. Seed `playground.draft` in the app's
+    /// preferences first; this launch keeps it. Prints `PREVIEW-MARK` times.
+    /// Opt in with TABFORGE_PREVIEW=phone, ipad or duo.
+    func testRecordAppPreview() throws {
+        guard let mode = ProcessInfo.processInfo.environment["TABFORGE_PREVIEW"] else {
+            throw XCTSkip("Set TABFORGE_PREVIEW to record an App Store preview take.")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--show-keyboard"]
+        app.launch()
+        focusKeyboard(app)
+        func element(_ identifier: String) -> XCUIElement {
+            let found = app.descendants(matching: .any)[identifier].firstMatch
+            XCTAssertTrue(found.waitForExistence(timeout: 5), identifier)
+            return found
+        }
+        func mark(_ label: String) { print("PREVIEW-MARK \(label) \(Date().timeIntervalSince1970)") }
+        func press(_ identifier: String, pause: TimeInterval = 2.0) {
+            mark(identifier)
+            element(identifier).tap()
+            Thread.sleep(forTimeInterval: pause)
+        }
+        func cursor() -> (line: Int, column: Int) {
+            let label = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Ln '")).firstMatch.label
+            let numbers = label.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
+            return numbers.count >= 2 ? (numbers[0], numbers[1]) : (0, 0)
+        }
+        func place(line: Int, column: Int) {
+            for _ in 0..<12 where cursor().line != line {
+                element(cursor().line < line ? "keyboard.arrow.down" : "keyboard.arrow.up").tap()
+            }
+            for _ in 0..<40 where cursor().column != column {
+                element(cursor().column < column ? "keyboard.arrow.right" : "keyboard.arrow.left").tap()
+            }
+            XCTAssertEqual(cursor().line, line)
+            XCTAssertEqual(cursor().column, column)
+        }
+        switch mode {
+        case "phone":
+            place(line: 2, column: 1)
+            Thread.sleep(forTimeInterval: 2)
+            mark("start")
+            Thread.sleep(forTimeInterval: 0.5)
+            press("key.Tab", pause: 2.4)
+            press("keyboard.modifier.command", pause: 0.4); press("keyboard.arrow.right", pause: 2.4)
+            press("key.Return", pause: 2.4)
+            press("key.Outdent", pause: 2.4)
+            press("key.(", pause: 3)
+        case "ipad":
+            place(line: 3, column: 5)
+            Thread.sleep(forTimeInterval: 2)
+            mark("start")
+            Thread.sleep(forTimeInterval: 0.5)
+            press("key.Outdent", pause: 2.4); press("key.Tab", pause: 2.4); press("keyboard.deleteLine", pause: 2.4)
+            press("keyboard.modifier.command", pause: 0.4); press("keyboard.arrow.right", pause: 2.4)
+            press("key.Return", pause: 3)
+        case "duo":
+            place(line: 1, column: 13)
+            Thread.sleep(forTimeInterval: 2)
+            mark("start")
+            Thread.sleep(forTimeInterval: 1)
+            press("key.["); press("key.]")
+            press("keyboard.modifier.command", pause: 0.6); press("keyboard.arrow.left")
+            press("keyboard.modifier.command", pause: 0.6); press("keyboard.arrow.right")
+        case "themes":
+            // The recorder switches the simulator to dark appearance when it
+            // sees the appearance-dark mark; the keyboard follows it live.
+            Thread.sleep(forTimeInterval: 2)
+            mark("start")
+            Thread.sleep(forTimeInterval: 2)
+            mark("appearance-dark")
+            Thread.sleep(forTimeInterval: 3.5)
+            mark("theme-menu")
+            chooseGearMenu("Keyboard theme", option: "Darcula", app: app)
+            Thread.sleep(forTimeInterval: 2.5)
+            mark("profile-menu")
+            chooseGearMenu("Input profile", option: "Terminal · ANSI", app: app)
+            Thread.sleep(forTimeInterval: 2.5)
+        default:
+            XCTFail("Unknown preview mode \(mode)")
+        }
+        mark("end")
+    }
+
     private func captureSourceSettings(_ app: XCUIApplication, into captures: inout [[String: Any]]) {
         app.buttons["keyboard.quickSettings"].tap()
         tapMenuItem("Dismiss keyboard", app: app)

@@ -475,10 +475,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private func applyAppearance() {
         switch preferences.settings.theme.usesDarkPalette ? .dark : preferences.settings.appearance {
         case .system:
-            overrideUserInterfaceStyle = switch hostKeyboardAppearance {
-            case .dark: .dark
-            case .light: .light
-            default: .unspecified
+            switch hostKeyboardAppearance {
+            case .dark: overrideUserInterfaceStyle = .dark
+            case .light: overrideUserInterfaceStyle = .light
+            default: overrideUserInterfaceStyle = .unspecified
             }
         case .light: overrideUserInterfaceStyle = .light
         case .dark: overrideUserInterfaceStyle = .dark
@@ -1381,6 +1381,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     /// The host changed its text, selection or field: re-evaluate sentence
     /// capitals before refreshing suggestions and the return key.
     func hostContextDidChange() {
+        // In the extension, the controller exposes the host field's traits.
+        if let controller = extensionController {
+            hostKeyboardAppearance = controller.textDocumentProxy.keyboardAppearance ?? .default
+        }
         updateAutoCapitalization()
         refreshContext()
     }
@@ -1853,12 +1857,20 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private func stopDeleting() { deleteTask?.cancel(); deleteTask = nil }
     /// A keyboard-style input view (the extension's, or the playground's) sits
     /// on the system keyboard's own material; previews elsewhere do not.
+    private var extensionController: UIInputViewController? {
+        var responder = next
+        while let current = responder {
+            if let controller = current as? UIInputViewController { return controller }
+            responder = current.next
+        }
+        return nil
+    }
     private var hostedBySystemKeyboard: Bool {
         (superview as? UIInputView)?.inputViewStyle == .keyboard
     }
     private func applyBackground() {
         let hosted = hostedBySystemKeyboard
-        backgroundColor = palette.background(hostedBySystemKeyboard: hosted)
+        backgroundColor = palette.surface(hostedBySystemKeyboard: hosted)
         isOpaque = !(palette.matchesSystem && hosted)
     }
     override func didMoveToSuperview() {

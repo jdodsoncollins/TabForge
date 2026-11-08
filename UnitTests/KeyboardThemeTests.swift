@@ -345,7 +345,7 @@ struct KeyboardThemeTests {
         #expect(document.cursor == 4)
         #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
         #expect(keyboard.backgroundColor?.resolvedColor(with: keyboard.traitCollection)
-                == KeyboardPalette.resolve(theme).background(hostedBySystemKeyboard: false).resolvedColor(with: keyboard.traitCollection))
+                == KeyboardPalette.resolve(theme).surface(hostedBySystemKeyboard: false).resolvedColor(with: keyboard.traitCollection))
         let restored = PreferencesStore(local: try #require(UserDefaults(suiteName: suite)))
         #expect(restored.settings.theme == theme)
         preferences.settings.theme = .standard
@@ -391,7 +391,7 @@ struct KeyboardThemeTests {
         func components(_ color: UIColor) -> [Double] {
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
             color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            return [red, green, blue, alpha].map(Double.init)
+            return [red, green, blue, alpha].map { Double($0) }
         }
         func luminance(_ rgb: [Double]) -> Double {
             let linear = rgb.prefix(3).map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }

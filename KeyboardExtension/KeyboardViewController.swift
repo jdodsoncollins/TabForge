@@ -60,7 +60,6 @@ final class KeyboardViewController: UIInputViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         preferences.refresh()
-        keyboard.hostKeyboardAppearance = textDocumentProxy.keyboardAppearance ?? .default
         keyboard.applySettings()
         // Reopening can attach to a different field without a settings change.
         keyboard.hostContextDidChange()
@@ -82,7 +81,6 @@ final class KeyboardViewController: UIInputViewController {
     }
     override func textDidChange(_ textInput: (any UITextInput)?) {
         super.textDidChange(textInput)
-        keyboard?.hostKeyboardAppearance = textDocumentProxy.keyboardAppearance ?? .default
         keyboard?.hostContextDidChange()
     }
     override func textWillChange(_ textInput: (any UITextInput)?) {

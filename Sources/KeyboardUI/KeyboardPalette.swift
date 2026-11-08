@@ -27,7 +27,7 @@ struct KeyboardPalette {
 
     /// The system keyboard's material shows through a clear background only
     /// when a keyboard-style input view hosts the keys.
-    func background(hostedBySystemKeyboard: Bool) -> UIColor {
+    func surface(hostedBySystemKeyboard: Bool) -> UIColor {
         matchesSystem && !hostedBySystemKeyboard ? backdrop : background
     }
 

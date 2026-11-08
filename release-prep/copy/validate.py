@@ -69,11 +69,11 @@ checks = {
 }
 report = {
     "locale": "en-US",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scope": "offline content validation; remote state is not queried",
     "fields": fields,
     "checks": checks,
-    "whatsNew": "Version 1.1.0 update notes are included in canonical metadata.",
+    "whatsNew": "Version 1.1.1 update notes are included in canonical metadata.",
     "supportUrl": version["supportUrl"],
     "supportUrlStatus": "Confirm the public page and approved support contact before submission.",
     "keywordIntelligence": {

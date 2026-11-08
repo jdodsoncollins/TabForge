@@ -1,0 +1,1 @@
+Everything in build 20, plus the iOS Standard theme now matches Apple's keyboard: the system's glass background shows through, keys are translucent with the system font, Go, Search and Send get a blue return key (grey while an empty field can't be submitted), and the keyboard follows light and dark mode changes live. Code themes are unchanged.

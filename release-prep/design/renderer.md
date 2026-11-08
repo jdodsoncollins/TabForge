@@ -1,5 +1,13 @@
 # Screenshot renderer
 
+TabForge 1.1.1 uses `render-store-screenshots.mjs`: one plain background, a large centered headline and subtitle, and one large genuine capture per image, with no breadcrumb label or footer. Phone and iPad images use native captures in the installed Simulator chrome, or crops of the captured keyboard for the light/dark comparison. The closed Duo images place new native captures inside the actual closed Device Hub chassis, using a display outline measured row by row from that frame; the open and tabletop images are the actual 1.1.0 Device Hub captures. It writes `store/en-US/<slot>/` under `--output-root` and a `store/render-receipt.json` with each image's sources.
+
+```sh
+node release-prep/design/render-store-screenshots.mjs --output-root artifacts/screens-1.1.1/out
+```
+
+The rest of this page describes the earlier framed renderer.
+
 The final release uses `render-framed-screenshots.mjs`. It keeps complete genuine device frames in every image. The older `render-screenshots.mjs` is the archived frameless composition workflow; its first artwork set is preserved under the ignored `frameless-v1` artifact folder.
 
 ```sh

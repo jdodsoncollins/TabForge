@@ -329,15 +329,21 @@ struct KeyboardThemeTests {
         #expect(keyboard.overrideUserInterfaceStyle == (theme.usesDarkPalette ? .dark : .unspecified))
         keyboard.frame = input.bounds
         keyboard.layoutIfNeeded()
-        let q = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "key.q" })
-        for style in [UIUserInterfaceStyle.dark, .light] {
-            input.overrideUserInterfaceStyle = style
-            keyboard.updateTraitsIfNeeded()
-            let expected = theme.usesDarkPalette ? UIUserInterfaceStyle.dark : style
-            #expect(keyboard.traitCollection.userInterfaceStyle == expected)
-            #expect(q.backgroundColor?.resolvedColor(with: keyboard.traitCollection)
-                    == palette.key.resolvedColor(with: UITraitCollection(userInterfaceStyle: expected)))
+        // iOS delivers the mode change as a trait change, so every iOS Standard
+        // color must stay dynamic rather than being resolved once. (A windowless
+        // UIInputView does not pass trait overrides down, so this checks the
+        // colors themselves.)
+        let q = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "key.q" } as? UIButton)
+        let legend = try #require(q.subviews.compactMap { $0 as? UILabel }.first { $0.text?.lowercased() == "q" })
+        let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
+        let arrow = try #require(toolbar.subviews.first { $0.accessibilityIdentifier == "keyboard.arrow.left" })
+        let dark = UITraitCollection(userInterfaceStyle: .dark), light = UITraitCollection(userInterfaceStyle: .light)
+        for color in [q.backgroundColor, legend.textColor, arrow.tintColor] {
+            let color = try #require(color)
+            #expect((color.resolvedColor(with: dark) != color.resolvedColor(with: light)) == palette.matchesSystem)
         }
+        #expect(q.backgroundColor?.resolvedColor(with: dark) == palette.key.resolvedColor(with: dark))
+        #expect(q.backgroundColor?.resolvedColor(with: light) == palette.key.resolvedColor(with: light))
     }
 
     @Test(arguments: KeyboardTheme.allCases)

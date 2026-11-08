@@ -412,6 +412,147 @@ struct KeyboardCompactLayoutTests {
         #expect(document.text == "|")
     }
 
+    @Test func globeFollowsIOSInPortraitPhonesAndStaysOnWiderLayouts() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        func hasGlobe() -> Bool { visibleKeys(in: keyboard).contains { $0.accessibilityIdentifier == "key.Next keyboard" } }
+        // A portrait phone where iOS draws its own globe below the keyboard.
+        keyboard.needsGlobe = false
+        layout(keyboard, in: CGSize(width: 390, height: 844))
+        #expect(!hasGlobe())
+        // Rotating or unfolding can make iOS ask for one; the extension
+        // reports that on its next layout pass.
+        keyboard.needsGlobe = true
+        keyboard.layoutIfNeeded()
+        #expect(hasGlobe())
+        keyboard.needsGlobe = false
+        keyboard.layoutIfNeeded()
+        #expect(!hasGlobe())
+        // Wider layouts keep TabForge's globe even when iOS has its own, which
+        // some orientations and Duo postures leave hard to find: a phone in
+        // landscape, a closed Duo on its side, an open Duo, and an iPad. A closed
+        // Duo's short outer display shows no iOS globe, so it keeps TabForge's
+        // even if insets narrow it to the phone layout.
+        for host in [CGSize(width: 852, height: 393), CGSize(width: 951, height: 669),
+                     CGSize(width: 669, height: 951), CGSize(width: 1194, height: 834),
+                     CGSize(width: 466, height: 678), CGSize(width: 440, height: 678)] {
+            layout(keyboard, in: host)
+            #expect(hasGlobe(), Comment(rawValue: "\(host)"))
+        }
+        // The extension may learn nothing about its host. A closed Duo's
+        // keyboard is wider than any phone in portrait, though its insets
+        // (452 of 466 pt usable) keep the phone layout; the widest phone in
+        // portrait still leaves the globe to iOS.
+        keyboard.availableHostSize = nil
+        for (width, globe) in [(CGFloat(452), true), (466, true), (440, false), (390, false)] {
+            keyboard.frame = CGRect(x: 0, y: 0, width: width, height: keyboard.desiredHeight)
+            keyboard.layoutIfNeeded()
+            #expect(hasGlobe() == globe, Comment(rawValue: "\(width) pt with no host size"))
+        }
+        // Other pages keep it too.
+        layout(keyboard, in: CGSize(width: 852, height: 393))
+        try tap("123", in: keyboard)
+        #expect(hasGlobe())
+        try tap("ABC", in: keyboard)
+        try tap("Fn", in: keyboard)
+        #expect(hasGlobe())
+        // That globe sits beside the Fn layer's Settings key, so its menu leaves
+        // out Next keyboard and a short screen keeps the quick settings in view.
+        let settings = try button("Settings", in: keyboard)
+        #expect(settings.menu?.children.first?.title == "Editing actions")
+        #expect(settings.menu?.children.contains { $0.title == "Keyboard height" } == true)
+    }
+
+    @Test func globeSwitchesOnceEvenWithAPendingModifier() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        preferences.settings.toolbarKeys = ToolbarKey.defaults + [.nextKeyboard]
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        var switches = 0
+        var forwarded = 0
+        keyboard.onNextKeyboard = { switches += 1 }
+        // The extension hands real touches to iOS's input-mode handler. An
+        // activation without a touch, such as from assistive technology, switches here.
+        keyboard.onInputModeEvent = { _, _ in forwarded += 1 }
+        layout(keyboard, in: CGSize(width: 834, height: 1194))
+        try tap("Next keyboard", in: keyboard)
+        #expect(switches == 1 && forwarded == 0)
+
+        let toolbar = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.toolbar" })
+        let controls = toolbar.subviews.compactMap { $0 as? UIButton }.filter { !$0.isHidden }.sorted { $0.frame.minX < $1.frame.minX }
+        // The optional toolbar globe sits beside the gear.
+        #expect(controls.suffix(2).map(\.accessibilityIdentifier) == ["keyboard.toolbar.nextKeyboard", "keyboard.quickSettings"])
+        let control = try #require(controls.first { $0.accessibilityIdentifier == "keyboard.modifier.control" })
+        control.sendActions(for: .touchDown); control.sendActions(for: .touchUpInside)
+        #expect(control.isSelected)
+        // A latched modifier never turns the globe into an unavailable shortcut.
+        let globe = try #require(controls.first { $0.accessibilityIdentifier == "keyboard.toolbar.nextKeyboard" })
+        #expect(globe.accessibilityLabel == "Next keyboard")
+        globe.sendActions(for: .touchDown); globe.sendActions(for: .touchUpInside)
+        #expect(switches == 2)
+        try tap("Next keyboard", in: keyboard)
+        #expect(switches == 3 && forwarded == 0)
+        let status = try #require(toolbar.subviews.first { $0.accessibilityIdentifier == "keyboard.status" })
+        #expect(status.isHidden)
+
+        // Next keyboard is also the gear menu's first item.
+        let gear = try #require(controls.last)
+        let first = try #require(gear.menu?.children.first as? UIMenu)
+        #expect(first.options.contains(.displayInline))
+        #expect((first.children.first as? UIAction)?.title == "Next keyboard")
+    }
+
+    @Test func crowdedBottomRowsKeepTargetsWideAndMessagesLeaveLettersVisible() throws {
+        let (preferences, suite) = try store()
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let keyboard = CodingKeyboardView(document: MemoryDocument(), preferences: preferences)
+        keyboard.needsGlobe = false
+        func bottomRow() -> [UIButton] {
+            let keys = visibleKeys(in: keyboard)
+            let lowest = keys.map(\.frame.minY).max() ?? 0
+            return keys.filter { $0.frame.minY == lowest }
+        }
+        // A host giving a closed Duo its full 466 pt gets the wide-phone layout
+        // and the globe; the toolbar's arrows replace the bottom row's.
+        layout(keyboard, in: CGSize(width: 466, height: 678))
+        var row = bottomRow()
+        #expect(row.contains { $0.accessibilityIdentifier == "key.Next keyboard" })
+        #expect(!row.contains { $0.accessibilityIdentifier == "key.Left" })
+        #expect(row.allSatisfy { $0.frame.width >= 34 }, Comment(rawValue: "\(row.map(\.frame.width))"))
+        // Without both arrows in the toolbar, the bottom row keeps them.
+        preferences.settings.toolbarKeys = [.escape, .control, .left]
+        keyboard.applySettings()
+        layout(keyboard, in: CGSize(width: 466, height: 678))
+        row = bottomRow()
+        #expect(row.contains { $0.accessibilityIdentifier == "key.Left" } && row.contains { $0.accessibilityIdentifier == "key.Right" })
+        // Wider layouts keep them as well.
+        preferences.settings.toolbarKeys = ToolbarKey.defaults
+        keyboard.applySettings()
+        layout(keyboard, in: CGSize(width: 669, height: 951))
+        #expect(bottomRow().contains { $0.accessibilityIdentifier == "key.Left" })
+
+        // Without the toolbar, a message covers the space bar, not the letters.
+        layout(keyboard, in: CGSize(width: 852, height: 393))
+        #expect(keyboard.isCompactHeight)
+        keyboard.showStatus("Host limits cursor movement")
+        keyboard.setNeedsLayout()
+        keyboard.layoutIfNeeded()
+        let status = try #require(keyboard.subviews.first { $0.accessibilityIdentifier == "keyboard.status" })
+        let space = try button("space", in: keyboard)
+        #expect(!status.isHidden && !status.isUserInteractionEnabled && status.frame.width >= 240)
+        #expect(status.frame.contains(CGPoint(x: space.frame.midX, y: space.frame.midY)))
+        for letter in ["q", "a", "z", "p"] { #expect(try !status.frame.intersects(button(letter, in: keyboard).frame), Comment(rawValue: letter)) }
+        // A narrow compact keyboard widens it past the space bar, inside the row.
+        layout(keyboard, in: CGSize(width: 390, height: 470))
+        #expect(keyboard.isCompactHeight)
+        keyboard.showStatus("Host limits cursor movement")
+        keyboard.setNeedsLayout()
+        keyboard.layoutIfNeeded()
+        #expect(status.frame.width >= 240 && status.frame.minX >= 0 && status.frame.maxX <= keyboard.bounds.width)
+        #expect(try !status.frame.intersects(button("q", in: keyboard).frame))
+    }
+
     private func store() throws -> (PreferencesStore, String) {
         let suite = "TabForge.CompactLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

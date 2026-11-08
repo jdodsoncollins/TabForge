@@ -43,4 +43,17 @@ struct ProseInputTests {
         #expect(older.autoCapitalize && older.periodShortcut && older.tipsShown == 0)
         #expect(ToolbarKey.defaults.count < ToolbarKey.maximumCount)
     }
+
+    @Test func toolbarGlobeIsOptionalAndSitsNextToSettings() throws {
+        // The bottom row already has a globe; the toolbar's is an extra choice.
+        #expect(!ToolbarKey.defaults.contains(.nextKeyboard))
+        var settings = KeyboardSettings()
+        settings.toolbarKeys = [.nextKeyboard] + ToolbarKey.defaults
+        // The toolbar draws the gear after these, so the globe sits beside it.
+        #expect(settings.toolbarKeys == ToolbarKey.defaults + [.nextKeyboard])
+        #expect(settings.toolbarKeys.count <= ToolbarKey.maximumCount)
+        let decoded = try JSONDecoder().decode(KeyboardSettings.self, from: JSONEncoder().encode(settings))
+        #expect(decoded.toolbarKeys.last == .nextKeyboard)
+        #expect(ToolbarKey.nextKeyboard.text == nil)
+    }
 }

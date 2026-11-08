@@ -116,12 +116,33 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     private(set) var isCompactHeight = false
     private var prefersCompactHeight = false
     private var functionLayer = false
+    /// Whether iOS asks this keyboard for its own globe key. The extension
+    /// updates it on every layout pass, because iOS changes it as a device
+    /// rotates or a Duo folds.
     var needsGlobe = true { didSet { if oldValue != needsGlobe { rebuild() } } }
+    /// iOS's own globe sits outside the keyboard, where some orientations and
+    /// Duo postures leave it hard to find, and a closed Duo's outer display has
+    /// none for third-party keyboards, though iOS tells the keyboard it needs
+    /// none. Every keyboard wider than a phone in portrait, and every short
+    /// screen, shows TabForge's globe as well. The closed Duo's keyboard is
+    /// 466 pt wide, wider than any phone's 440, even where its insets leave the
+    /// phone layout. Taller Face ID phones in portrait keep iOS's globe below.
+    private var showsGlobeKey: Bool { needsGlobe || layout != .compact || isShortHost || bounds.width > 440 }
+    /// Whether the current key grid includes the globe, so a layout pass can
+    /// rebuild it when the rule above changes its answer.
+    private var builtWithGlobe = false
+    /// Set when a globe press began with iOS's input-mode handler, which then
+    /// owns the tap (next keyboard) and the hold (the keyboard list).
+    private var globePressHandledBySystem = false
     private var rows: [[KeyButton]] = []
     private let toolbar = UIView()
     private let gearButton = UIButton(type: .system)
     private let escapeButton = UIButton(type: .system)
     private var quickSettingsItems: [UIMenuElement] = []
+    /// The Fn layer's Settings key menu. It leaves out Next keyboard: that layer
+    /// only appears in short layouts, which always show the globe key, and a
+    /// landscape phone has little height for the menu's quick settings.
+    private var compactSettingsMenu: UIMenu?
     private let deleteLineButton = UIButton(type: .system)
     private var navigationButtons: [UIButton] = []
     private var modifierButtons: [(UIButton, KeyboardModifiers)] = []
@@ -307,6 +328,27 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             button.isHidden = true
             toolbar.addSubview(button); extraToolbarButtons[key] = button
         }
+        // An optional globe in the toolbar, which stays in view in every
+        // full-height layout. It behaves like the globe key.
+        let globe = UIButton(type: .system)
+        globe.setImage(UIImage(systemName: "globe", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)), for: .normal)
+        globe.accessibilityLabel = "Next keyboard"
+        globe.accessibilityUserInputLabels = ["Next keyboard", "Globe"]
+        globe.accessibilityIdentifier = "keyboard.toolbar.\(ToolbarKey.nextKeyboard.rawValue)"
+        globe.accessibilityTraits.insert(.keyboardKey)
+        globe.isExclusiveTouch = false
+        globe.addAction(UIAction { [weak self, weak globe] _ in
+            guard let self, let globe else { return }; self.beginToolbarPress(globe, consumesModifiers: false)
+        }, for: .touchDown)
+        globe.addAction(UIAction { [weak self, weak globe] _ in
+            guard let self, let globe else { return }; self.finishToolbarPress(globe, action: .globe)
+        }, for: .touchUpInside)
+        globe.addAction(UIAction { [weak self, weak globe] _ in
+            guard let self, let globe else { return }; self.finishToolbarPress(globe, cancelled: true)
+        }, for: [.touchCancel, .touchUpOutside])
+        globe.addTarget(self, action: #selector(globeEvent(_:event:)), for: .allTouchEvents)
+        globe.isHidden = true
+        toolbar.addSubview(globe); extraToolbarButtons[.nextKeyboard] = globe
         deleteLineButton.tintColor = .label
         deleteLineButton.accessibilityIdentifier = "keyboard.deleteLine"
         deleteLineButton.isExclusiveTouch = false
@@ -486,7 +528,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         key.accessibilityUserInputLabels = [title, key.accessibilityLabel ?? title]
         if action == .settings {
             key.showsMenuAsPrimaryAction = true
-            key.menu = gearButton.menu
+            key.menu = compactSettingsMenu
             key.accessibilityLabel = "Tools and settings"
             key.accessibilityUserInputLabels = [title, "Tools and settings"]
         }
@@ -892,7 +934,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             }
         }
         var bottom = [makeKey(numbers ? "ABC" : "123", .mode, weight: 1.2, utility: true)]
-        if needsGlobe { bottom.append(makeKey("Next keyboard", symbol: "globe", .globe, utility: true)) }
+        builtWithGlobe = showsGlobeKey
+        if builtWithGlobe { bottom.append(makeKey("Next keyboard", symbol: "globe", .globe, utility: true)) }
         if isCompactHeight { bottom.append(makeKey("Fn", .function, utility: true)) }
         bottom.append(makeKey("Tab", symbol: "arrow.right.to.line", .tab, utility: true))
         let space = makeKey("space", .space, weight: isCompactHeight || layout == .compact ? 3.5 : 6)
@@ -900,7 +943,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if palette.matchesSystem && !isCompactHeight && layout.hasFullSymbolRow { space.legend.text = nil }
         bottom.append(space)
         if !isCompactHeight { bottom.append(makeKey(".", .text("."))) }
-        if !isCompactHeight && layout != .compact {
+        // On the narrowest wide layout the globe would squeeze five keys to
+        // about 31 pt, so the arrows stay in the toolbar when it has both.
+        let toolbarArrows = Set(preferences.settings.toolbarKeys.prefix(ToolbarKey.maximumCount)).isSuperset(of: [.left, .right])
+        if !isCompactHeight && layout != .compact && !(layout == .widePhone && builtWithGlobe && toolbarArrows) {
             bottom += [makeKey("Left", symbol: "arrow.left", .navigation(.left), utility: true), makeKey("Right", symbol: "arrow.right", .navigation(.right), utility: true)]
         }
         let returnLabel = isEditingSnippet ? nil : engine.document.returnKeyLabel
@@ -977,7 +1023,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             accessibilityValue = "\(resolved.rawValue) horizontalDivision=\(horizontal) local=\(bounds) window=\(window.bounds) divisions=\(divisions)"
         }
         #endif
-        if resolved != layout || compactChanged || roomChanged {
+        if resolved != layout || compactChanged || roomChanged || builtWithGlobe != showsGlobeKey {
             layout = resolved
             if !compact { functionLayer = false }
             if !ProcessInfo.processInfo.arguments.contains("--layout-diagnostics") { accessibilityValue = resolved.rawValue }
@@ -1001,7 +1047,6 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if !isCompactHeight { arrangeToolbar() }
         if isCompactHeight && statusLabel.superview !== self { addSubview(statusLabel) }
         if !isCompactHeight && statusLabel.superview !== toolbar { toolbar.addSubview(statusLabel) }
-        if isCompactHeight { statusLabel.frame = CGRect(x: safeAreaInsets.left + 8, y: contentTop, width: max(0, usableWidth - 16), height: 44) }
         // Hosts can compress input views during rotations and keyboard transitions.
         let toolbarHeight: CGFloat = isCompactHeight ? 0 : 44
         let gap: CGFloat = isCompactHeight ? 4 : 6
@@ -1013,6 +1058,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             var rect = CGRect(x: safeAreaInsets.left + 5, y: contentTop + toolbarHeight + 2 + CGFloat(index) * (height + gap), width: max(0, usableWidth - 10), height: height)
             if !functionLayer, !numbers, (isCompactHeight || layout == .compact), row.count == 9 { rect = rect.insetBy(dx: rect.width * 0.045, dy: 0) }
             arrange(row, in: rect)
+        }
+        if isCompactHeight, let space = rows.last?.first(where: { $0.action == .space }) {
+            // Without the toolbar, messages sit over the space bar, at least
+            // 240 pt wide for two lines, so the letters stay in view.
+            // Touches pass through to the keys below.
+            let row = CGRect(x: safeAreaInsets.left + 5, y: space.frame.minY, width: max(0, usableWidth - 10), height: space.frame.height)
+            let width = min(row.width, max(space.frame.width, 240))
+            statusLabel.frame = CGRect(x: min(max(row.minX, space.frame.midX - width / 2), row.maxX - width), y: row.minY, width: width, height: row.height)
         }
         var elements: [Any] = []
         if let snippetPanel { elements.append(snippetPanel) }
@@ -1224,6 +1277,12 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             if action == .navigation(.escape) { finishSnippetEditing(save: false); return }
             if action == .globe { finishSnippetEditing(save: false); if !isEditingSnippet { onNextKeyboard?() }; return }
         }
+        if action == .globe {
+            // Pending modifiers never block switching. A press iOS tracked has
+            // already switched (or shown the list); switching again would skip one.
+            if !globePressHandledBySystem { onNextKeyboard?() }
+            return
+        }
         if isScrubbing { isScrubbing = false; return }
         statusTask?.cancel(); statusLabel.isHidden = true
         invalidateSwipeContext()
@@ -1280,7 +1339,6 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                 if engine.settings.compatibility == .remoteDesktop { showStatus("Use the client’s Shift-Tab") }
                 else { engine.outdent() }
             case .navigation(let key): handled = engine.navigate(key)
-            case .globe: onNextKeyboard?()
             default: break
             }
         }
@@ -1637,7 +1695,6 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
                     guard let self else { return }
                     self.showStatus(self.isPreview ? "Changes and snippets stay in this preview until the app closes" : "Preferences and snippets stay in this keyboard. Full Access is not requested.")
                 },
-                UIAction(title: "Use system keyboard / dictation", image: UIImage(systemName: "globe")) { [weak self] _ in self?.onNextKeyboard?() },
                 UIAction(title: "Dismiss keyboard", image: UIImage(systemName: "keyboard.chevron.compact.down")) { [weak self] _ in self?.onDismiss?() }
             ])
         ]
@@ -1704,8 +1761,14 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         // Reuse the settings actions while typing: only completion-dependent
         // tools need to refresh when the text context changes.
         gearButton.isEnabled = !isEditingSnippet
-        gearButton.menu = isEditingSnippet ? nil : UIMenu(title: isPreview ? "Playground preview" : "Keyboard settings", children: [editing, suggestions, snippets] + quickSettingsItems)
-        for key in rows.flatMap({ $0 }) where key.action == .settings { key.menu = gearButton.menu; key.isEnabled = !isEditingSnippet }
+        // Switching keyboards comes first, beside the gear, so it is one tap
+        // away even where the globe is hard to find.
+        let nextKeyboard = UIAction(title: "Next keyboard", image: UIImage(systemName: "globe")) { [weak self] _ in self?.onNextKeyboard?() }
+        let switching = UIMenu(options: .displayInline, children: [nextKeyboard])
+        let title = isPreview ? "Playground preview" : "Keyboard settings"
+        gearButton.menu = isEditingSnippet ? nil : UIMenu(title: title, children: [switching, editing, suggestions, snippets] + quickSettingsItems)
+        compactSettingsMenu = isEditingSnippet ? nil : UIMenu(title: title, children: [editing, suggestions, snippets] + quickSettingsItems)
+        for key in rows.flatMap({ $0 }) where key.action == .settings { key.menu = compactSettingsMenu; key.isEnabled = !isEditingSnippet }
     }
 
     private func toggleCapsLock() {
@@ -1747,7 +1810,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         "Tip: hold q–p for numbers, or hold a symbol for related operators",
         "Tip: =; switches the symbol row to operators",
         "Tip: drag the space bar to move the cursor",
-        "Tip: the gear holds snippets, themes, toolbar keys and settings"
+        "Tip: the gear holds snippets, themes, toolbar keys and settings",
+        "Tip: hold the globe to choose any keyboard, or use Next keyboard in the gear"
     ]
     /// Shows each one-time tip once, on a later keyboard appearance each.
     func showNextTipIfNeeded() {
@@ -1759,8 +1823,20 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         preferences.settings.tipsShown = index + 1
         showStatus(Self.tips[index], seconds: 6)
     }
-    @objc private func globeEvent(_ sender: UIView, event: UIEvent) {
-        if !isEditingSnippet { onInputModeEvent?(sender, event) }
+    /// Forwards a globe press to iOS, which switches on a tap and lists every
+    /// keyboard on a hold, following the finger to the chosen one. A press
+    /// that begins while a snippet is open, an accessibility activation without
+    /// a touch, and previews instead switch through `perform(.globe)`.
+    @objc private func globeEvent(_ sender: UIView, event: UIEvent?) {
+        guard let event, let touch = event.touches(for: sender)?.first else { return }
+        if touch.phase == .began { globePressHandledBySystem = onInputModeEvent != nil && !isEditingSnippet }
+        guard globePressHandledBySystem else { return }
+        onInputModeEvent?(sender, event)
+        if touch.phase == .ended || touch.phase == .cancelled {
+            // The key's own release handler runs in this same dispatch, in an
+            // order UIKit does not promise, and must still see this press as iOS's.
+            DispatchQueue.main.async { [weak self] in self?.globePressHandledBySystem = false }
+        }
     }
     private func startDeleting() {
         guard preferences.settings.repeatDelete, modifiers.isEmpty else { return }

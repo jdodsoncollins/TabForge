@@ -24,15 +24,16 @@ private final class KeyButton: UIButton {
     let legend = UILabel()
     let hint = UILabel()
     var baseColor: UIColor
-    let highlightColor: UIColor
+    var highlightColor: UIColor
     override var isHighlighted: Bool { didSet { backgroundColor = isHighlighted ? highlightColor : baseColor } }
 
-    init(title: String, symbol: String? = nil, hint: String? = nil, action: KeyAction, weight: CGFloat = 1, utility: Bool = false, palette: KeyboardPalette) {
+    init(title: String, symbol: String? = nil, hint: String? = nil, action: KeyAction, weight: CGFloat = 1, utility: Bool = false,
+         palette: KeyboardPalette, cornerRadius: CGFloat = 7) {
         self.action = action; self.weight = weight
         baseColor = utility ? palette.utility : palette.key
-        highlightColor = palette.accent.withAlphaComponent(0.35)
+        highlightColor = palette.pressed
         super.init(frame: .zero)
-        layer.cornerRadius = 7
+        layer.cornerRadius = cornerRadius
         layer.cornerCurve = .continuous
         backgroundColor = baseColor
         // Each key tracks one finger; separate keys never exclude one another.
@@ -272,7 +273,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         autoresizingMask = [.flexibleWidth]
         isMultipleTouchEnabled = true
         toolbar.isMultipleTouchEnabled = true
-        backgroundColor = palette.background
+        applyBackground()
         toolbar.accessibilityIdentifier = "keyboard.toolbar"
         addSubview(toolbar)
         gearButton.tintColor = .label
@@ -410,7 +411,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         statusLabel.numberOfLines = 2
         statusLabel.textAlignment = .center
         statusLabel.textColor = palette.accent
-        statusLabel.backgroundColor = palette.background
+        statusLabel.backgroundColor = palette.callout
+        statusLabel.layer.cornerRadius = 10
+        statusLabel.layer.cornerCurve = .continuous
+        statusLabel.clipsToBounds = true
         statusLabel.isHidden = true
         toolbar.addSubview(statusLabel)
         swipeLayer.strokeColor = palette.accent.resolvedColor(with: traitCollection).cgColor
@@ -462,6 +466,17 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     /// Short screens (an iPhone SE or a closed Duo) trade 6 pt per row for
     /// editor space; the chosen key size still orders the three options.
     private var rowKeyHeight: CGFloat { preferences.settings.keySize.height - (isShortHost ? 6 : 0) }
+    /// The System appearance follows the trait collection iOS gives the
+    /// keyboard, which changes live with the system keyboard's glass. Pinning a
+    /// style from the host's `keyboardAppearance` went stale when the device
+    /// switched between light and dark with the keyboard open.
+    private func applyAppearance() {
+        switch preferences.settings.theme.usesDarkPalette ? .dark : preferences.settings.appearance {
+        case .system: overrideUserInterfaceStyle = .unspecified
+        case .light: overrideUserInterfaceStyle = .light
+        case .dark: overrideUserInterfaceStyle = .dark
+        }
+    }
     func applySettings() {
         // SwiftUI updates the editor for cursor and focus changes as well as
         // preferences. Avoid touching every control or rescanning suggestions
@@ -481,15 +496,11 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         } else if lastSettings?.autocorrectProse != true && !isEditingSnippet { onPrepareAutocorrection?() }
         engine.settings = isEditingSnippet ? snippetInputSettings : preferences.settings
         if lastSettings?.theme != preferences.settings.theme { palette = .resolve(preferences.settings.theme) }
-        switch preferences.settings.theme.usesDarkPalette ? .dark : preferences.settings.appearance {
-        case .system: overrideUserInterfaceStyle = .unspecified
-        case .light: overrideUserInterfaceStyle = .light
-        case .dark: overrideUserInterfaceStyle = .dark
-        }
-        backgroundColor = palette.background
+        applyAppearance()
+        applyBackground()
         for button in allToolbarButtons { button.tintColor = palette.text }
         statusLabel.textColor = palette.accent
-        statusLabel.backgroundColor = palette.background
+        statusLabel.backgroundColor = palette.callout
         swipeLayer.strokeColor = palette.accent.resolvedColor(with: traitCollection).cgColor
         if lastSettings?.compatibility != preferences.settings.compatibility { clearModifiers() }
         updateModifierButtons()
@@ -502,7 +513,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
     }
 
     private func makeKey(_ title: String, symbol: String? = nil, hint: String? = nil, _ action: KeyAction, weight: CGFloat = 1, utility: Bool = false) -> KeyButton {
-        let key = KeyButton(title: title, symbol: symbol, hint: preferences.settings.showKeyHints ? hint : nil, action: action, weight: weight, utility: utility, palette: palette)
+        let key = KeyButton(title: title, symbol: symbol, hint: preferences.settings.showKeyHints ? hint : nil, action: action, weight: weight,
+                            utility: utility, palette: palette, cornerRadius: keyCornerRadius)
         if case .text(let value) = action, "{}[]<>()".contains(value) { key.legend.textColor = palette.accent }
         let names = ["{": "Open brace", "}": "Close brace", "[": "Open square bracket", "]": "Close square bracket", "<": "Less than", ">": "Greater than", "(": "Open parenthesis", ")": "Close parenthesis"]
         key.accessibilityLabel = names[title] ?? title
@@ -648,8 +660,8 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             options.reverse()
         }
         let container = UIView(frame: CGRect(x: x, y: y, width: width, height: height))
-        container.backgroundColor = palette.key
-        container.layer.cornerRadius = 10
+        container.backgroundColor = palette.callout
+        container.layer.cornerRadius = palette.matchesSystem ? 14 : 10
         container.layer.cornerCurve = .continuous
         container.layer.shadowColor = UIColor.black.cgColor
         container.layer.shadowOpacity = 0.25
@@ -662,7 +674,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             let label = UILabel(frame: CGRect(x: CGFloat(index) * cellWidth + 2, y: 3, width: cellWidth - 4, height: height - 6))
             label.text = option
             label.textAlignment = .center
-            label.font = .monospacedSystemFont(ofSize: option.count > 2 ? 15 : 20, weight: .medium)
+            label.font = legendFont(ofSize: option.count > 2 ? 15 : (palette.matchesSystem ? 22 : 20), weight: palette.matchesSystem ? .regular : .medium)
             label.adjustsFontSizeToFitWidth = true
             label.minimumScaleFactor = 0.6
             label.layer.cornerRadius = 7
@@ -686,7 +698,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         alternatesPopup = popup
         for (position, label) in popup.labels.enumerated() {
             label.backgroundColor = position == index ? palette.accent : .clear
-            label.textColor = position == index ? palette.background : palette.text
+            label.textColor = position == index ? palette.onAccent : palette.text
         }
     }
     @objc private func keyDragged(_ sender: UIControl, event: UIEvent) {
@@ -919,7 +931,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         if builtWithGlobe { bottom.append(makeKey("Next keyboard", symbol: "globe", .globe, utility: true)) }
         if isCompactHeight { bottom.append(makeKey("Fn", .function, utility: true)) }
         bottom.append(makeKey("Tab", symbol: "arrow.right.to.line", .tab, utility: true))
-        bottom.append(makeKey("space", .space, weight: isCompactHeight || layout == .compact ? 3.5 : 6))
+        let space = makeKey("space", .space, weight: isCompactHeight || layout == .compact ? 3.5 : 6)
+        // Like the system keyboard, only phone-sized layouts label the space bar.
+        if palette.matchesSystem && !isCompactHeight && layout.hasFullSymbolRow { space.legend.text = nil }
+        bottom.append(space)
         if !isCompactHeight { bottom.append(makeKey(".", .text("."))) }
         // On the narrowest wide layout the globe would squeeze five keys to
         // about 31 pt, so the arrows stay in the toolbar when it has both.
@@ -933,13 +948,16 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
             ?? makeKey("Return", symbol: "return", .enter, weight: 1.5, utility: true)
         // Keep one identifier whatever the host's title.
         enter.accessibilityIdentifier = "key.Return"
+        returnKeyFilled = nil
         bottom.append(enter)
         // The outer bottom corners follow the display's rounded corners.
-        bottom.first?.cornerConfiguration = .corners(topLeftRadius: .fixed(7), topRightRadius: .fixed(7),
-            bottomLeftRadius: .containerConcentric(minimum: 7), bottomRightRadius: .fixed(7))
-        bottom.last?.cornerConfiguration = .corners(topLeftRadius: .fixed(7), topRightRadius: .fixed(7),
-            bottomLeftRadius: .fixed(7), bottomRightRadius: .containerConcentric(minimum: 7))
+        let radius = keyCornerRadius
+        bottom.first?.cornerConfiguration = .corners(topLeftRadius: .fixed(radius), topRightRadius: .fixed(radius),
+            bottomLeftRadius: .containerConcentric(minimum: radius), bottomRightRadius: .fixed(radius))
+        bottom.last?.cornerConfiguration = .corners(topLeftRadius: .fixed(radius), topRightRadius: .fixed(radius),
+            bottomLeftRadius: .fixed(radius), bottomRightRadius: .containerConcentric(minimum: radius))
         rows.append(bottom)
+        updateReturnKeyFill()
         updateLetterLegends()
         updateKeyFonts()
         updateModifierButtons()
@@ -1193,22 +1211,50 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
     }
 
+    /// iOS Standard uses the system keyboard's font; code palettes stay monospaced.
+    private func legendFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
+        palette.matchesSystem ? .systemFont(ofSize: size, weight: weight) : .monospacedSystemFont(ofSize: size, weight: weight)
+    }
+    /// Single characters on the system keyboard are much larger than its word
+    /// labels. Size them from the key, like the system's iPhone and iPad layouts.
+    private var characterLegendSize: CGFloat {
+        guard palette.matchesSystem else { return 21 }
+        if isCompactHeight || layout == .compact { return 23 }
+        return min(28, max(23, rowKeyHeight * 0.6))
+    }
+    private var keyCornerRadius: CGFloat {
+        // The system's keys are about three times as tall as their corner radius.
+        palette.matchesSystem ? min(14, (isCompactHeight ? 44 : rowKeyHeight) / 3) : 7
+    }
+
     private func updateKeyFonts() {
         let bold = traitCollection.legibilityWeight == .bold
         let metrics = UIFontMetrics(forTextStyle: .body)
-        escapeButton.titleLabel?.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: 12, weight: bold ? .bold : .medium), maximumPointSize: 16, compatibleWith: traitCollection)
+        let system = palette.matchesSystem
+        escapeButton.titleLabel?.font = metrics.scaledFont(for: legendFont(ofSize: system ? 15 : 12, weight: bold ? .bold : .medium),
+                                                           maximumPointSize: system ? 19 : 16, compatibleWith: traitCollection)
         for button in extraToolbarButtons.values where button.title(for: .normal) != nil {
-            button.titleLabel?.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: 18, weight: bold ? .bold : .medium), maximumPointSize: 22, compatibleWith: traitCollection)
+            button.titleLabel?.font = metrics.scaledFont(for: legendFont(ofSize: system ? 20 : 18, weight: bold ? .bold : .medium), maximumPointSize: 24, compatibleWith: traitCollection)
         }
+        let characterSize = characterLegendSize
         for key in rows.flatMap({ $0 }) {
-            let baseSize: CGFloat = [.function, .modifier(.control), .enter, .symbolPage].contains(key.action) ? 14 : 21
-            key.legend.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: baseSize, weight: bold ? .bold : .regular), maximumPointSize: baseSize + 5, compatibleWith: traitCollection)
-            key.hint.font = .monospacedSystemFont(ofSize: 9, weight: bold ? .bold : .medium)
-            key.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: bold ? .bold : .medium), forImageIn: .normal)
+            let word = (key.legend.text ?? key.accessibilityLabel ?? "").count > 1
+            let baseSize: CGFloat = if [.function, .modifier(.control), .enter, .symbolPage].contains(key.action) {
+                system ? 16 : 14
+            } else if system {
+                word ? 17 : characterSize
+            } else {
+                21
+            }
+            key.legend.font = metrics.scaledFont(for: legendFont(ofSize: baseSize, weight: bold ? .bold : .regular),
+                                                 maximumPointSize: baseSize + 5, compatibleWith: traitCollection)
+            key.hint.font = legendFont(ofSize: system ? 11 : 9, weight: bold ? .bold : .medium)
+            key.setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: system ? 19 : 18, weight: bold ? .bold : system ? .regular : .medium), forImageIn: .normal)
         }
         for (button, modifier) in modifierButtons {
-            let baseSize: CGFloat = modifier == .control ? 12 : 22
-            button.titleLabel?.font = metrics.scaledFont(for: .monospacedSystemFont(ofSize: baseSize, weight: bold ? .bold : .semibold), maximumPointSize: baseSize + 4, compatibleWith: traitCollection)
+            let baseSize: CGFloat = modifier == .control ? (system ? 15 : 12) : 22
+            button.titleLabel?.font = metrics.scaledFont(for: legendFont(ofSize: baseSize, weight: bold ? .bold : system ? .medium : .semibold),
+                                                         maximumPointSize: baseSize + 4, compatibleWith: traitCollection)
         }
     }
 
@@ -1330,7 +1376,7 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
 
     func refreshContext() {
         if let draft = snippetDraft { snippetPanel?.update(draft); return }
-        if engine.document.returnKeyLabel != displayedReturnLabel { rebuild() }
+        if engine.document.returnKeyLabel != displayedReturnLabel { rebuild() } else { updateReturnKeyFill() }
         if preferences.settings.autocorrectProse { engine.validateAutocorrectionContext() }
         // Suggestions remain available in the shared tools and settings menu,
         // leaving a toolbar slot for the dedicated Escape key.
@@ -1794,6 +1840,43 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         }
     }
     private func stopDeleting() { deleteTask?.cancel(); deleteTask = nil }
+    /// Whether the return key currently shows the primary-action fill.
+    private var returnKeyFilled: Bool?
+    /// Like the system keyboard, fill the return key when the host names an
+    /// action (Go, Search, Send…), except while a field that enables its return
+    /// key automatically is still empty: Apple's key is grey there.
+    private func updateReturnKeyFill() {
+        guard let enter = rows.last?.first(where: { $0.action == .enter }) else { return }
+        var fill: UIColor?
+        if let primary = palette.primaryAction, let label = displayedReturnLabel, label != "Next" {
+            let document = engine.document
+            let empty = document.returnKeyRequiresText && document.selectedText == nil
+                && (document.contextBeforeInput(maximumCharacters: 1) ?? "").isEmpty
+                && (document.contextAfterInput(maximumCharacters: 1) ?? "").isEmpty
+            fill = empty ? nil : primary
+        }
+        guard returnKeyFilled != (fill != nil) else { return }
+        returnKeyFilled = fill != nil
+        enter.baseColor = fill ?? palette.utility
+        enter.highlightColor = fill?.withAlphaComponent(0.6) ?? palette.pressed
+        if !enter.isHighlighted { enter.backgroundColor = enter.baseColor }
+        let foreground = fill == nil ? palette.text : .white
+        enter.legend.textColor = foreground; enter.tintColor = foreground
+    }
+    /// A keyboard-style input view (the extension's, or the playground's) sits
+    /// on the system keyboard's own material; previews elsewhere do not.
+    private var hostedBySystemKeyboard: Bool {
+        (superview as? UIInputView)?.inputViewStyle == .keyboard
+    }
+    private func applyBackground() {
+        let hosted = hostedBySystemKeyboard
+        backgroundColor = palette.surface(hostedBySystemKeyboard: hosted)
+        isOpaque = !(palette.matchesSystem && hosted)
+    }
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        applyBackground()
+    }
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window == nil { releaseTransientResources() } else { prepareLanguageResources() }
@@ -1841,9 +1924,10 @@ final class CodingKeyboardView: UIView, UIGestureRecognizerDelegate {
         let upper = keyPresses[ObjectIdentifier(key)]?.uppercase ?? (uppercase || shiftHeld)
         preview.text = upper ? text.uppercased() : text
         preview.textAlignment = .center
-        preview.font = .monospacedSystemFont(ofSize: 30, weight: .medium)
-        preview.backgroundColor = palette.key; preview.textColor = palette.accent
-        preview.layer.cornerRadius = 10; preview.clipsToBounds = true
+        preview.font = legendFont(ofSize: 30, weight: palette.matchesSystem ? .regular : .medium)
+        preview.backgroundColor = palette.callout; preview.textColor = palette.accent
+        preview.layer.cornerRadius = palette.matchesSystem ? 14 : 10; preview.layer.cornerCurve = .continuous
+        preview.clipsToBounds = true
         preview.isUserInteractionEnabled = false
         preview.isAccessibilityElement = false
         preview.accessibilityElementsHidden = true

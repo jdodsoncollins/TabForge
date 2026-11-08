@@ -383,9 +383,28 @@ struct KeyboardCompactLayoutTests {
         layout(keyboard, in: CGSize(width: 390, height: 844))
         let send = try button("Return", in: keyboard)
         #expect(send.accessibilityLabel == "Send")
+        // Like the system keyboard, an action title fills the key.
+        #expect(send.backgroundColor == .systemBlue)
+        // A field that enables its return key automatically keeps it grey,
+        // like Apple's, until it has text.
+        document.returnKeyRequiresText = true
+        keyboard.refreshContext()
+        #expect(send.backgroundColor != .systemBlue)
+        #expect(send.superview === keyboard)
+        try tap("h", in: keyboard)
+        #expect(send.backgroundColor == .systemBlue)
+        try tap("Delete", in: keyboard)
+        #expect(document.text.isEmpty)
+        #expect(send.backgroundColor != .systemBlue)
+        document.returnKeyRequiresText = false
+        document.returnKeyLabel = "Next"
+        keyboard.refreshContext()
+        #expect(try button("Return", in: keyboard).backgroundColor != .systemBlue)
         document.returnKeyLabel = nil
         keyboard.refreshContext()
-        #expect(try button("Return", in: keyboard).accessibilityLabel == "Return")
+        let plain = try button("Return", in: keyboard)
+        #expect(plain.accessibilityLabel == "Return")
+        #expect(plain.backgroundColor != .systemBlue)
     }
 
     @Test(arguments: [375.0, 440, 1024])

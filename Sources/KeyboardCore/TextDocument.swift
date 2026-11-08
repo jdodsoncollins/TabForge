@@ -21,6 +21,9 @@ public protocol TextDocument: AnyObject {
     var capitalizesSentences: Bool { get }
     /// The host's return-key title, such as "Send"; nil keeps the return symbol.
     var returnKeyLabel: String? { get }
+    /// True when the host enables its return key only once the field has text
+    /// (`enablesReturnKeyAutomatically`).
+    var returnKeyRequiresText: Bool { get }
     func insert(_ text: String)
     func deleteBackward()
     /// Matches UITextInput offsets, measured in UTF-16 code units.
@@ -42,6 +45,7 @@ public extension TextDocument {
     var autocorrectionContextIdentifier: UUID? { nil }
     var capitalizesSentences: Bool { false }
     var returnKeyLabel: String? { nil }
+    var returnKeyRequiresText: Bool { false }
     func contextBeforeInput(maximumCharacters: Int) -> String? {
         before.map { String($0.suffix(max(0, maximumCharacters))) }
     }
@@ -158,6 +162,7 @@ public final class MemoryDocument: TextDocument {
     public var autocorrectionContextIdentifier: UUID? = UUID()
     public var capitalizesSentences = false
     public var returnKeyLabel: String?
+    public var returnKeyRequiresText = false
     public var hasCompleteContext: Bool { exposesContext }
     public var cursor: Int { selection.location }
     public init(text: String = "", cursor: Int? = nil, selection: NSRange? = nil) {

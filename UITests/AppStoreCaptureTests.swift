@@ -33,6 +33,16 @@ final class AppStoreCaptureTests: XCTestCase {
                     appearance: "Light", into: &captures)
             return
         }
+        if ProcessInfo.processInfo.environment["TABFORGE_STORE_SHOTS_MODE"] == "dark" {
+            // The iOS Standard theme shows the system keyboard material, which
+            // follows the device appearance. Run this mode with the simulator
+            // in dark appearance so the material and keys are both dark.
+            XCUIDevice.shared.orientation = .portrait
+            launch(app, appearance: "Dark")
+            capture("dark", app: app, profile: "Code editor", theme: "iOS Standard",
+                    appearance: "Dark", into: &captures)
+            return
+        }
         if ProcessInfo.processInfo.environment["TABFORGE_STORE_SHOTS_MODE"] == "settings" {
             XCUIDevice.shared.orientation = .portrait
             launch(app, appearance: "Dark")

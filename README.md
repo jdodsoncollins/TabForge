@@ -44,6 +44,7 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 - One short-press gear menu for editing actions, code suggestions or swipe alternatives, quick preferences, complete keyboard settings, and snippet creation, editing, deletion, and insertion. Installed-keyboard preferences live in the keyboard; companion previews use independent temporary settings.
 - Width-based phone, wide-phone, expanded and iPad/Studio layouts. Guarded Duo fold/camera geometry supports open and tabletop layouts.
 - Four compact rows for landscape phones and short windows, with an Fn editing layer at the same height. Automatic, Compact and Full height preferences.
+- A globe key wherever iOS asks for one and on every layout wider than a portrait phone, including each Duo pose. Hold it to choose from all keyboards. Next keyboard, the gear menu's first item, and an optional toolbar globe also switch.
 - iOS Standard follows system Light/Dark; Darcula, Dracula and Nord provide code palettes. Light, Dark and Tinted app icons are included.
 - Code editor, Terminal · ANSI and literal Remote desktop profiles. Host/client support determines which control sequences work.
 - Optional conservative English prose autocorrect using Apple's public spelling service and supplementary lexicon. It defaults off, respects eligible host fields and skips code-like input. Space commits; immediate Delete restores the original spelling.

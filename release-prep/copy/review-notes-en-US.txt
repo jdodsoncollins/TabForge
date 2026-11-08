@@ -1,6 +1,6 @@
 TabForge includes a keyboard extension and a companion playground with setup help, source/privacy links and on-device voice input. All features work without a TabForge account or purchase. No demo credentials are required.
 
-Version 1.1.0 adds long-press alternates, a configurable toolbar and haptic strength. Key clicks use UIInputViewAudioFeedback, which needs no Full Access and follows the Keyboard Clicks setting. Optional autocorrect now ranks replacements on the device by tap position, word frequency and nearby words. New option Learn my tap positions defaults off; it stores only per-key average tap offsets locally and is erased when turned off. The 1.0.1 Tip Jar is unchanged: optional consumables that unlock nothing.
+Version 1.1.1 changes appearance and keyboard switching only, with no change to permissions, storage or data flow. The iOS Standard theme shows the system keyboard background through translucent keys and follows light/dark changes live. TabForge shows its own globe key on landscape iPhones, iPad and every Duo layout, and follows iOS on portrait iPhones: tap it for the next keyboard, hold it for the list. Next keyboard is also first in the gear menu. The Tip Jar's optional consumables still unlock nothing.
 
 Keyboard setup:
 1. Open TabForge. The Playground works immediately with its in-app keyboard.

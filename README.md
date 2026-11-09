@@ -12,11 +12,11 @@ Support: [jeremy@jeremycollins.net](mailto:jeremy@jeremycollins.net). Use [priva
 
 ## Privacy and transparency
 
-A keyboard handles sensitive text. TabForge has no backend, analytics, advertising, account service or automatic diagnostic uploader. The optional companion Tip Jar uses Apple’s StoreKit service for purchases. The extension does not record a keystroke history or transmit typing. It does not request Full Access or use an App Group.
+A keyboard handles sensitive text. TabForge has no backend, analytics, advertising, account service or automatic diagnostic uploader. The optional companion Tip Jar uses Apple’s StoreKit service for purchases. The extension does not record a keystroke history or transmit typing. It does not request Full Access.
 
-The keyboard saves its preferences and custom snippets in its own local container. Manage them from the keyboard's gear menu. The companion app **does save its playground draft locally** and does not synchronize keyboard settings or snippets. Voice input requires on-device recognition; it has no cloud fallback. User-triggered sharing, host apps, Apple system features and device backups have their own data handling. Read [PRIVACY.md](PRIVACY.md) for the complete boundaries, migration limits, and storage details.
+The keyboard saves its preferences and custom snippets in its own local container. Manage them from the keyboard's gear menu in any app, or from the companion Playground: the app writes its changes to a shared App Group file that the keyboard reads, and only reads, the next time it opens. The companion app **does save its playground draft locally**; the draft is never shared. Voice input requires on-device recognition; it has no cloud fallback. User-triggered sharing, host apps, Apple system features and device backups have their own data handling. Read [PRIVACY.md](PRIVACY.md) for the complete boundaries, migration limits, and storage details.
 
-The companion keyboard and layout guide are previews. Their settings and snippets are held only in memory for that app process and do not configure the installed keyboard.
+Features that would need Full Access, today only haptic feedback, stay off in the keyboard. If a later version requests Full Access, each will still stay off until you turn it on.
 
 The app's Settings screen links directly to this repository, its privacy documentation and its security policy. Licenses & notices displays the bundled MIT license and third-party notices offline. Public source makes review possible; it is not a claim of an independent security audit or proof that a distributed binary matches a particular commit.
 
@@ -41,7 +41,7 @@ The Duo tabletop capture shows the keyboard using the lower display in the playg
 ## Keyboard features
 
 - Accessible braces, brackets, angle brackets and full ASCII punctuation; Tab, indent/outdent, Delete Line, arrows, Ctrl, Option, Command and Escape.
-- One short-press gear menu for editing actions, code suggestions or swipe alternatives, quick preferences, complete keyboard settings, and snippet creation, editing, deletion, and insertion. Installed-keyboard preferences live in the keyboard; companion previews use independent temporary settings.
+- One short-press gear menu for editing actions, code suggestions or swipe alternatives, quick preferences, complete keyboard settings, and snippet creation, editing, deletion, and insertion. The companion Playground's gear configures the installed keyboard too.
 - Width-based phone, wide-phone, expanded and iPad/Studio layouts. Guarded Duo fold/camera geometry supports open and tabletop layouts.
 - Four compact rows for landscape phones and short windows, with an Fn editing layer at the same height. Automatic, Compact and Full height preferences.
 - A globe key wherever iOS asks for one and on every layout wider than a portrait phone, including each Duo pose. Hold it to choose from all keyboards. Next keyboard, the gear menu's first item, and an optional toolbar globe also switch.
@@ -73,13 +73,13 @@ cp .env.example .env
 python3 Scripts/configure-build.py
 ```
 
-The two settings are `TABFORGE_DEVELOPMENT_TEAM` and `TABFORGE_BUNDLE_IDENTIFIER`. Register your app identifier and its `.Keyboard` extension identifier with your Apple Developer account. Test bundle IDs are derived with `.Tests` and `.UITests` suffixes. Xcode uses automatic signing with your local team. The app and extension have no App Group entitlement and do not request Full Access.
+The two settings are `TABFORGE_DEVELOPMENT_TEAM` and `TABFORGE_BUNDLE_IDENTIFIER`. Register your app identifier and its `.Keyboard` extension identifier with your Apple Developer account. Test bundle IDs are derived with `.Tests` and `.UITests` suffixes. Xcode uses automatic signing with your local team. The app and extension share the App Group `group.` plus your app identifier (`TABFORGE_APP_GROUP` in `Configuration/Build.xcconfig`); register it for your team. The keyboard does not request Full Access. Unsigned Simulator builds have no App Group, so the companion's settings then stay in memory.
 
 The script treats `.env` as data, validates identifiers, and writes `Configuration/Signing.local.xcconfig` with owner-only permissions. It does not run shell commands, fetch credentials, change the checked-in project, or print your values. Both files are ignored by Git. Run it again after changing `.env`; use `--check` to validate without writing. The public `Configuration/Build.xcconfig` optionally includes this local file, so XcodeGen regeneration keeps the public project generic. Remove the local file to return to the unsigned Simulator defaults.
 
 No source edit is needed. Changing a distribution's identifiers creates different containers; this setup does not migrate existing drafts or snippets.
 
-In iOS Settings, choose **General → Keyboard → Keyboards → Add New Keyboard → TabForge**, then use the globe to switch keyboards. Keyboard preferences and snippets stay in the keyboard's own local storage and are managed from its gear menu.
+In iOS Settings, choose **General → Keyboard → Keyboards → Add New Keyboard → TabForge**, then use the globe to switch keyboards. Keyboard preferences and snippets stay in the keyboard's own local storage. Change them from its gear menu, or in the companion app, whose changes the keyboard picks up the next time it opens.
 
 Internal targets retain the `ScriptKeyboard` name. Keep private signing overrides, credentials and provisioning profiles out of version control.
 

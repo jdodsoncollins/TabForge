@@ -313,6 +313,10 @@ final class ScriptKeyboardUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["settings.compatibility"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["settings.keyboardTheme"].exists)
         XCTAssertFalse(app.buttons["Reset keyboard preferences"].exists)
+        // UI tests share settings through a temporary file, as a signed build does through its App Group.
+        let sharing = app.staticTexts["settings.sharingStatus"]
+        XCTAssertTrue(sharing.waitForExistence(timeout: 5))
+        XCTAssertTrue(sharing.label.hasPrefix("Change settings and snippets with the gear"))
     }
 
     func testLocalSnippetEditorSavesSeparatelyFromInsertion() {

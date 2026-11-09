@@ -59,6 +59,13 @@ targets:
             CFBundleURLSchemes: [tabforge]
         NSMicrophoneUsageDescription: Record speech when you start voice-to-code in the playground.
         NSSpeechRecognitionUsageDescription: Turn your speech into code in the playground using on-device recognition.
+        TabForgeAppGroup: $(TABFORGE_APP_GROUP)
+    # The app writes keyboard settings to this group; the keyboard only reads them.
+    entitlements:
+      path: Configuration/App.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(TABFORGE_APP_GROUP)
   ScriptKeyboardExtension:
     type: app-extension
     platform: iOS
@@ -87,6 +94,15 @@ targets:
             PrimaryLanguage: en-US
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          # No RequestsOpenAccess: TabForge does not request Full Access.
+          # KeyboardCapabilities.requestsFullAccess must match this.
+        TabForgeAppGroup: $(TABFORGE_APP_GROUP)
+    # Read-only without Full Access, which is all the keyboard needs.
+    entitlements:
+      path: Configuration/Keyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(TABFORGE_APP_GROUP)
   ScriptKeyboardTests:
     type: bundle.unit-test
     platform: iOS

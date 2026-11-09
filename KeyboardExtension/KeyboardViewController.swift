@@ -21,8 +21,10 @@ final class KeyboardViewController: UIInputViewController {
         // Leave the system-provided dictation key enabled; recording is not permitted here.
         hasDictationKey = false
         primaryLanguage = "en-US"
-        preferences = PreferencesStore()
+        // Reads, and never writes, the settings the companion app shares.
+        preferences = PreferencesStore(sharing: SharedSettingsFile.appGroup().map(PreferencesStore.Sharing.read) ?? .off)
         keyboard = CodingKeyboardView(document: ProxyDocument(self), preferences: preferences)
+        keyboard.hasFullAccess = hasFullAccess
         keyboard.requiresSupplementaryLexicon = true
         keyboard.needsGlobe = needsInputModeSwitchKey
         keyboard.translatesAutoresizingMaskIntoConstraints = false
@@ -60,6 +62,9 @@ final class KeyboardViewController: UIInputViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         preferences.refresh()
+        // TabForge does not request Full Access, so this stays false in
+        // shipping builds. Features that need it are also off until chosen.
+        keyboard.hasFullAccess = hasFullAccess
         keyboard.applySettings()
         // Reopening can attach to a different field without a settings change.
         keyboard.hostContextDidChange()

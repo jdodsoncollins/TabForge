@@ -36,5 +36,7 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).KeyboardViewController</string>
 	</dict>
+	<key>TabForgeAppGroup</key>
+	<string>$(TABFORGE_APP_GROUP)</string>
 </dict>
 </plist>

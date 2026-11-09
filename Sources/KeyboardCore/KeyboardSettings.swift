@@ -245,8 +245,32 @@ public struct KeyboardSettings: Codable, Equatable, Sendable {
     public var terminalDeleteIsDEL = true
     public var terminalApplicationCursor = false
     public var snippets: [CodeSnippet] = CodeSnippet.defaults
+    private var fullAccessOptIns: [String]?
+    /// Features the person turned on that need Full Access. Empty by default,
+    /// so granting Full Access never turns a feature on by itself. Only the
+    /// keyboard changes this, because only it can tell whether access is granted.
+    public var enabledFullAccessFeatures: Set<FullAccessFeature> {
+        get { Set((fullAccessOptIns ?? []).compactMap(FullAccessFeature.init(rawValue:))) }
+        set {
+            let names = FullAccessFeature.allCases.filter(newValue.contains).map(\.rawValue)
+            fullAccessOptIns = names.isEmpty ? nil : names
+        }
+    }
     public init() {}
     public var smartEditingEnabled: Bool { compatibility == .editor }
+
+    /// Records saved before settings were shared gave the built-in snippets a
+    /// new random ID on every launch. Matching them by name and text lets the
+    /// app and the keyboard refer to the same snippet. Other snippets keep their IDs.
+    public mutating func useStableDefaultSnippetIDs() {
+        var used = Set(snippets.map(\.id))
+        for index in snippets.indices {
+            guard let match = CodeSnippet.defaults.first(where: { $0.name == snippets[index].name && $0.text == snippets[index].text }),
+                  snippets[index].id != match.id, !used.contains(match.id) else { continue }
+            used.insert(match.id)
+            snippets[index].id = match.id
+        }
+    }
 }
 
 public struct CodeSnippet: Identifiable, Codable, Equatable, Sendable {
@@ -256,11 +280,13 @@ public struct CodeSnippet: Identifiable, Codable, Equatable, Sendable {
     public init(id: UUID = UUID(), name: String, text: String) {
         self.id = id; self.name = name; self.text = text
     }
+    /// Fixed IDs let the companion app and the keyboard recognize the same
+    /// built-in snippet when they merge changes.
     public static let defaults = [
-        CodeSnippet(name: "Arrow", text: " => "),
-        CodeSnippet(name: "Not equal", text: " != "),
-        CodeSnippet(name: "Comment", text: "// "),
-        CodeSnippet(name: "Pipe", text: " | "),
-        CodeSnippet(name: "Home path", text: "~/")
+        CodeSnippet(id: UUID(uuidString: "54414246-0000-4000-8000-000000000001")!, name: "Arrow", text: " => "),
+        CodeSnippet(id: UUID(uuidString: "54414246-0000-4000-8000-000000000002")!, name: "Not equal", text: " != "),
+        CodeSnippet(id: UUID(uuidString: "54414246-0000-4000-8000-000000000003")!, name: "Comment", text: "// "),
+        CodeSnippet(id: UUID(uuidString: "54414246-0000-4000-8000-000000000004")!, name: "Pipe", text: " | "),
+        CodeSnippet(id: UUID(uuidString: "54414246-0000-4000-8000-000000000005")!, name: "Home path", text: "~/")
     ]
 }

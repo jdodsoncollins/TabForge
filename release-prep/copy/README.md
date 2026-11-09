@@ -47,8 +47,8 @@ The fifth image adapts to the actual device capture; it is one image per device 
 
 The [release-readiness review](../readiness.md) separates the 1.0.1 candidate checks from the live build 12 and older evidence. For future App Review submissions:
 
-1. Verify a matching new binary has no Full Access request, App Group entitlement or sharing code, and that keyboard settings/snippet management works in the extension without altering host text during snippet editing.
-2. Verify the companion has no persistent keyboard controls: previews use only memory while the playground draft remains saved independently.
+1. Verify a matching new binary has no Full Access request (`RequestsOpenAccess` absent or false), that the app and keyboard are signed with the same registered App Group, and that keyboard settings/snippet management works in the extension without altering host text during snippet editing.
+2. Verify on a device that a change made in the companion Playground reaches the keyboard when it next opens, that a later change made in the keyboard survives, and that the playground draft is not shared. Builds through 1.1.0 kept companion previews in memory; the reviewer notes, privacy policy copy and website policy must describe the shared settings before the first version with them is submitted.
 3. Publish the matching website policy, repository support/privacy documents, and listing/reviewer copy through the authorized release process, then read them back. Changing these local files does not change any remote destination.
 4. Keep App Privacy publication separate from the source privacy manifest. Local-only processing supports the prepared Data Not Collected recommendation; do not claim the questionnaire is published without checking its actual state.
 5. Refresh screenshots whose settings or preview UI changed, and record processing, order, crop safety and source checksums. Earlier complete media receipts describe the older UI.

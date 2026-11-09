@@ -92,7 +92,6 @@ struct SnippetDraftRoutingTests {
             ("Drag space to move cursor", \KeyboardSettings.cursorScrubbing),
             ("Hold Delete to repeat", \KeyboardSettings.repeatDelete),
             ("Key click sounds", \KeyboardSettings.keyClicks),
-            ("Haptic feedback", \KeyboardSettings.haptics),
             ("Return sends carriage return (CR)", \KeyboardSettings.terminalReturnIsCR),
             ("Delete sends DEL instead of BS", \KeyboardSettings.terminalDeleteIsDEL),
             ("Application cursor mode (SS3)", \KeyboardSettings.terminalApplicationCursor)
@@ -104,19 +103,60 @@ struct SnippetDraftRoutingTests {
             trigger.sendActions(for: .primaryActionTriggered)
             #expect(store.settings[keyPath: keyPath] != original)
         }
-        store.settings.haptics = true
-        keyboard.applySettings()
-        for title in ["Medium", "Strong", "Light"] {
-            let strength = try #require(menu("Haptic strength", in: gear.menu?.children ?? []))
-            let option = try #require(action(title, in: strength.children))
-            let trigger = UIButton()
-            trigger.addAction(option, for: .primaryActionTriggered)
-            trigger.sendActions(for: .primaryActionTriggered)
-            #expect(store.settings.hapticStrength.rawValue == title)
-        }
         for title in ["Compact", "Balanced", "Comfortable", "Add snippet", "Reset keyboard preferences and snippets"] {
             #expect(action(title, in: gear.menu?.children ?? []) != nil)
         }
+    }
+
+    @Test func hapticsInTheKeyboardNeedFullAccessAndTheirOwnOptIn() throws {
+        let (keyboard, store, _) = make()
+        let gear = try button("keyboard.quickSettings", in: keyboard)
+        func trigger(_ option: UIAction) {
+            let button = UIButton()
+            button.addAction(option, for: .primaryActionTriggered)
+            button.sendActions(for: .primaryActionTriggered)
+        }
+        func strengthOptions() throws -> [UIAction] {
+            try #require(menu("Haptic strength", in: gear.menu?.children ?? [])).children.compactMap { $0 as? UIAction }
+        }
+        #expect(store.settings.haptics)
+
+        // Without Full Access the switch explains itself and does nothing.
+        var haptics = try #require(action("Haptic feedback", in: gear.menu?.children ?? []))
+        #expect(haptics.attributes.contains(.disabled))
+        #expect(haptics.state == .off)
+        trigger(haptics)
+        #expect(store.settings.enabledFullAccessFeatures.isEmpty)
+        #expect(try strengthOptions().allSatisfy { $0.attributes.contains(.disabled) })
+
+        // Granting Full Access alone still leaves haptics off.
+        keyboard.hasFullAccess = true
+        haptics = try #require(action("Haptic feedback", in: gear.menu?.children ?? []))
+        #expect(!haptics.attributes.contains(.disabled))
+        #expect(haptics.state == .off)
+        #expect(try strengthOptions().allSatisfy { $0.attributes.contains(.disabled) })
+        trigger(haptics)
+        #expect(store.settings.enabledFullAccessFeatures == [.haptics])
+        for title in ["Medium", "Strong", "Light"] {
+            let option = try #require(try strengthOptions().first { $0.title == title })
+            #expect(!option.attributes.contains(.disabled))
+            trigger(option)
+            #expect(store.settings.hapticStrength.rawValue == title)
+        }
+        haptics = try #require(action("Haptic feedback", in: gear.menu?.children ?? []))
+        #expect(haptics.state == .on)
+        trigger(haptics)
+        #expect(store.settings.enabledFullAccessFeatures.isEmpty)
+
+        // The app's previews are ordinary app code and use the plain setting.
+        keyboard.hasFullAccess = false
+        keyboard.isPreview = true
+        haptics = try #require(action("Haptic feedback", in: gear.menu?.children ?? []))
+        #expect(!haptics.attributes.contains(.disabled))
+        #expect(haptics.state == .on)
+        trigger(haptics)
+        #expect(!store.settings.haptics)
+        #expect(store.settings.enabledFullAccessFeatures.isEmpty)
     }
 
     @Test func allDraftActionsStayLocalAndSavingDoesNotInsert() throws {

@@ -1,1 +1,1 @@
-A free, open-source keyboard for code and terminal work, with brackets, Tab, snippets and themes. Configure it from the keyboard without Full Access.
+A free, open-source keyboard for code and terminal work, with brackets, Tab, snippets and themes. Set it up from the app or the keyboard, without Full Access.

@@ -8,7 +8,7 @@ This document describes TabForge's implementation. It does not describe the data
 
 The Tip Jar section below describes version 1.0.1 (15), which App Store Connect reported as Ready for Sale on October 27, 2026. Touch-aware correction, word-frequency ranking, nearby-word swipe matches, and the optional **Learn my tap positions** setting are new in version 1.1.0. The October 27 [website policy](https://www.jeremycollins.net/tabforge/privacy) covers both versions, with a version note, and lists the bundled third-party resources; its production deployment from website commit `36a7165` is READY on the canonical domains. The [product page](https://www.jeremycollins.net/tabforge) lists the same credits. Learned tap offsets stay on the device, so the App Store's Data Not Collected label still applies. The [release copy](release-prep/copy/privacy-policy-en-US.md) preserves the policy text.
 
-Sharing keyboard settings from the companion app through a read-only App Group, described below, is new after version 1.1.0. The website policy and its release copy must describe it before a version with it is submitted to the App Store.
+Sharing keyboard settings from the companion app through a read-only App Group, described below, is new in version 1.2.0. The November 10, 2026 website policy and its [release copy](release-prep/copy/privacy-policy-en-US.md) describe it, with a version note for 1.1.1 and earlier. The shared file stays on the device, so the Data Not Collected label still applies.
 
 ## What stays in memory
 
